@@ -1,0 +1,6 @@
+{
+  "name": "@term/zone",
+  "private": true,
+  "description": "Not an npm package. Zone ships through the Term registry and declares itself in deck.tree. This file exists for one reason: `type: module`, so its TypeScript tests and runtime shims load as ESM. Inside the Term tree they inherited that from the Term package; at deck/zone nothing above them says it.",
+  "type": "module"
+}

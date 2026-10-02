@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# The `zone` command.
+#
+# Install by putting this directory's `bin` on your PATH, or by linking it:
+#
+#   ln -s "$PWD/bin/zone" ~/.local/bin/zone
+#
+# It resolves its own location, so a link from anywhere works and the package
+# can move without the link breaking.
+#
+# WHAT IT RUNS, in order:
+#
+#   the source          `code/line/base.tree`, booted through the Term CLI in
+#                       this repository (deck/term/deck/term/host/line.js),
+#                       which compiles it on first use and caches the result.
+#                       First, so an edit in a checkout is what runs, never a
+#                       bundle built before it.
+#   host/line/run.mjs   the built console, written by
+#                       `term boot code/line/base.tree --out host/line`.
+#                       Runs with node alone, no Term CLI and no compile. This
+#                       is what a copy installed from the Term registry
+#                       carries, where there is no Term tree beside it.
+set -euo pipefail
+
+HERE="$(cd "$(dirname "$(readlink "${BASH_SOURCE[0]}" || echo "${BASH_SOURCE[0]}")")" && pwd)"
+ZONE="$(cd "$HERE/.." && pwd)"
+TERM_HOST="$ZONE/../term/deck/term/host/line.js"
+BUILT="$ZONE/host/line/run.mjs"
+
+if [ -f "$TERM_HOST" ]; then
+  exec node "$TERM_HOST" boot "$ZONE/code/line/base.tree" -- "$@"
+fi
+
+if [ -f "$BUILT" ]; then
+  exec node "$BUILT" "$@"
+fi
+
+echo "zone: no Term CLI at $TERM_HOST to boot the source with, and no built console at $BUILT" >&2
+echo "zone: build one with \`term boot code/line/base.tree --out host/line\` from $ZONE" >&2
+exit 1

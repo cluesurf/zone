@@ -1,0 +1,31 @@
+# What NOT to publish to the Internet Archive. gitignore syntax.
+# Everything else in this folder goes into the published zip.
+# `.git/` and `.env*` are always left out.
+#
+# Carried over from the Term package's own list, where zone lived until
+# 2026-10-02.
+
+# build output, dependencies, caches
+node_modules/
+/host/
+.base/
+tmp/
+/link/
+build/
+
+# work in progress, not yet in git
+code/native/
+test/file/
+test/fixture/sdk/
+view/
+
+# editor and agent settings
+.vscode/
+.claude/
+.DS_Store
+*.bak
+
+# credentials
+.npmrc
+*.pem
+*.key
