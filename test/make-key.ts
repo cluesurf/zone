@@ -10,9 +10,9 @@
 import './shim'
 import { writeFileSync } from 'node:fs'
 
-// `tonePack` from the seal module's own build, which carries the stdlib's tone code inlined. It was read from
-// `host/link/@term/seed/code/tone`, a file the build had stopped writing on 2026-08-30, so the test kept passing on
-// a stale copy until the stdlib rename on 2026-10-02 pointed it at a path nothing had ever written.
+// `tonePack` from the seal module's own build, which carries the stdlib's tone code inlined. It was read from a
+// `host/link/` copy of the stdlib's tone module, a file the build had stopped writing on 2026-08-30, so the test kept
+// passing on a stale copy until the stdlib rename on 2026-10-02 pointed it at a path nothing had ever written.
 const { makeKey, tonePack } = await import('../host/code/seal/base')
 
 const out = process.argv[2]
