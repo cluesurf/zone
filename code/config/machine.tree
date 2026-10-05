@@ -28,23 +28,23 @@ load ../base
   find sort
   find seat
 
-load @term/base/code/text
+load @term/base/text
   find text
-
-load @term/base/code/path
-  find join
   find to-upper-case
   find replace-all
 
-load @term/base/code/list
+load @term/base/path
+  find join
+
+load @term/base/list
   find list
   find push
   find find
 
-load @term/base/code/maybe
+load @term/base/maybe
   find maybe
 
-load @term/base/code/file
+load @term/base/file
   find read
   find write
   find test
@@ -123,7 +123,7 @@ task make-bond
 # Read the binding. A machine that is not bound is an ordinary state, not an
 # error, because `zone show` has to be able to say so.
 task read-bond
-  note async
+  mark async
   # The provider the declaration names, used only when a binding has to be
   # derived. Required rather than optional: an omitted optional parameter
   # unsettles inference across the package, which is zone-0069.

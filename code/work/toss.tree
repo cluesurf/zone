@@ -1,4 +1,4 @@
-load @term/base/code/maybe
+load @term/base/maybe
   find maybe
   find is-none
   find unwrap
@@ -26,11 +26,11 @@ load ../save/base
 load ../tool/ask
   find word
 
-load @term/base/code/text
+load @term/base/text
   find text
   find to-upper-case
   find replace-all
-load @term/base/code/file
+load @term/base/file
   find drop-file
 
 load ./one
@@ -44,7 +44,7 @@ load ../tool/base
   find drop-file
 
 task toss
-  note async
+  mark async
   take name, like text
 
   # A name given means one secret at the provider, not this machine's binding.
@@ -57,7 +57,6 @@ task toss
       send back
         call drop-one
           read name
-          wait true
 
   save bond
     call read-bond

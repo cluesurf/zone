@@ -12,18 +12,18 @@
 # milliseconds, which is what is left of the 50 ms target after the keychain
 # read and the process spawn that sit outside this measurement.
 
-load @term/base/code/text
+load @term/base/text
   find text
 
-load @term/base/code/list
+load @term/base/list
   find list
   find push
   find size
 
-load @term/base/code/boolean
+load @term/base/boolean
   find boolean
 
-load @term/base/code/maybe
+load @term/base/maybe
   find maybe
   find is-none
   find unwrap
@@ -74,7 +74,6 @@ load ../tool/base
   find here
   find have-file
   find read-file
-  find is-equal
   find more
   find mark-test
   find now-ms
@@ -84,7 +83,7 @@ load ../tool/base
 host warm-budget, code 30
 
 task probe
-  note async
+  mark async
   take spot, like text
   like number
 
@@ -92,7 +91,6 @@ task probe
 
   save decks
     call read-decks
-      wait true
   save any
     call more
       call size
@@ -109,7 +107,6 @@ task probe
       send back
         call vet
           bind sort, text <>
-          wait true
 
   call mark-test
     bind name, text <a declaration is in force>
@@ -165,7 +162,6 @@ task probe
   save bond-got
     call read-bond
       bind hold, text <>
-      wait true
   save bound
     call not-equal
       read spot
@@ -210,7 +206,6 @@ task probe
       bind spot
         call seal-seat
           read bond
-      wait true
   call mark-test
     bind name, text <a master key is stored>
     bind good, read keyed
@@ -255,7 +250,6 @@ task probe
   save mark
     call mark-deck
       read body
-      wait true
   save fresh-shape
     call equal
       read file/deck
@@ -288,7 +282,6 @@ task probe
         bind spot
           call seal-seat
             read bond
-        wait true
 
   save spot-in
     call unwrap
@@ -339,7 +332,6 @@ task probe
         bind path, read lock-in/path
         bind name, read one/name
         bind code, read lock-in/code
-        wait true
       save open
         call add
           read open

@@ -9,4 +9,4 @@
 # else. `test/base.tree` beside it is real and stays in the walk. See
 # the draft marker rules in `deck/term/CLAUDE.md`.
 
-note draft
+mark draft

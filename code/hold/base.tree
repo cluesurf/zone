@@ -13,16 +13,16 @@ load ../base
   find hold
   find need
 
-load @term/base/code/text
+load @term/base/text
   find text
   find to-upper-case
   find replace-all
 
-load @term/base/code/list
+load @term/base/list
   find list
   find push
 
-load @term/base/code/boolean
+load @term/base/boolean
   find boolean
 
 load ./bitwarden
@@ -61,7 +61,7 @@ task good
 
 # Several projects at once, each as a bind and the holds it carries.
 task read-hold-many
-  note async
+  mark async
   take kind, like text
   take body, like text
   # The organization. The SDK takes it on every call, where the retired
@@ -76,13 +76,12 @@ task read-hold-many
           bind body, read body
           bind team, read team
           bind list, read list
-          wait true
   send back
     make list
 
 # Every project the credential can see, as name and id pairs.
 task list-hold
-  note async
+  mark async
   take kind, like text
   take body, like text
   take team, like text
@@ -93,7 +92,6 @@ task list-hold
         call bitwarden-list
           bind body, read body
           bind team, read team
-          wait true
   send back
     make list
 

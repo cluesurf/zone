@@ -1,4 +1,4 @@
-load @term/base/code/maybe
+load @term/base/maybe
   find maybe
   find is-none
   find unwrap
@@ -37,16 +37,16 @@ load ../tool/ask
   find hide
   find sure
 
-load @term/base/code/text
+load @term/base/text
   find text
   find to-upper-case
   find replace-all
 
-load @term/base/code/list
+load @term/base/list
   find list
   find push
 
-load @term/base/code/boolean
+load @term/base/boolean
   find boolean
 
 load ../tool/base
@@ -57,7 +57,7 @@ load ../tool/base
 # Store a credential for one sort. The value is read with echo off and goes
 # straight to the store, never through an argument or a file.
 task bank
-  note async
+  mark async
   take sort, like text
   take over, like boolean
 
@@ -91,7 +91,6 @@ task bank
   # unless the caller already said `--over`.
   fork case
     call keep
-      wait true
       bind kind, read kind
       bind spot, read spot
     case true
@@ -130,7 +129,7 @@ task bank
 
 # Describe one sort's record. Never the value.
 task tell
-  note async
+  mark async
   take sort, like text
 
   save bond
@@ -161,7 +160,6 @@ task tell
   # from the repo's own `.zone.tree`.
   save yes
     call keep
-      wait true
       bind kind, read kind
       bind spot, read spot
 
@@ -179,7 +177,7 @@ task tell
 
 # Every sort this machine knows about.
 task poll
-  note async
+  mark async
   like list
   save bond
     call read-bond
@@ -204,7 +202,7 @@ task poll
 # it in the provider, and the message says so, because believing otherwise
 # is how a leaked credential stays usable.
 task shed
-  note async
+  mark async
   take sort, like text
 
   save bond

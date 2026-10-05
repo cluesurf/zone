@@ -13,29 +13,29 @@
 # It leaks nothing new: the names and the shape are already public, because
 # `zone.tree` is committed.
 
-load @term/base/code/text
+load @term/base/text
   find text
   find replace-all
   find substring
 
-load @term/base/code/list
+load @term/base/list
   find list
   find push
   find join
   find size
 
-load @term/base/code/boolean
+load @term/base/boolean
   find boolean
 
-load @term/base/code/bytes
+load @term/base/bytes
   find bytes
   find from-text
   find to-hex
 
-load @term/base/code/cryptography/digest
+load @term/base/cryptography/digest
   find digest-sha256
 
-load @term/base/code/tone
+load @term/base/tone
   find tone-encode
 
 load ../base
@@ -310,7 +310,7 @@ task shape-deck
 # Grouped in EIGHTS, which is the house shape for a sha256. `tone-encode`
 # groups in fours, so the dashes are taken back out and put in again.
 task mark-deck
-  note async
+  mark async
   take body, like text
   like text
   save flat
@@ -321,7 +321,6 @@ task mark-deck
             call from-text
               call shape-deck
                 read body
-            wait true
       text <->
       text <>
   save out

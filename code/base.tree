@@ -10,15 +10,15 @@
 # Nothing in this file holds a value that may be shown. `show` on any of
 # these renders the record, never the secret.
 
-load @term/base/code/text
+load @term/base/text
   find text
   find to-upper-case
   find replace-all
 
-load @term/base/code/list
+load @term/base/list
   find list
 
-load @term/base/code/boolean
+load @term/base/boolean
   find boolean
 
 # Where a machine keeps its bootstrap credential. The name is the label the
@@ -46,16 +46,26 @@ form hold
   link name, like text
   link body, like text
   # the secret's note, as written at the provider. In `note` mode its `zone:`
-  # line is what says which zone the value belongs to.
-  link note, like text
+  # line is what says which zone the value belongs to. Empty for a value that
+  # never came from the provider (a fact, a cast), which a `make hold` may
+  # leave out: a field with no `fall` is required now.
+  link note
+    like text
+    fall text <>
 
 # A declared requirement from a repository manifest. Carries a name and
 # whether the command may run without it, and never a value.
 form need
   link name, like text
   link must, like boolean
-  link from, like text
-  link alias, list text
+  # the provider name it is read from when that differs, and its other
+  # spellings: both empty unless the declaration says (`from`, `name`)
+  link from
+    like text
+    fall text <>
+  link alias
+    list text
+    fall make list
 
 # The machine binding, read from the machine config.
 form bond
@@ -123,19 +133,29 @@ form spot
   link name, like text
   link path, like text
   link base, like text
-  # the organization at the provider
-  link team, like text
+  # the organization at the provider. This, `hold`, `bank` and `fact` are
+  # empty unless the declaration says, and a `make spot` for a zone it is
+  # about to read leaves them out: a field with no `fall` is required now.
+  link team
+    like text
+    fall text <>
   # how a secret says which zone it belongs to: `note` or `project`
-  link hold, like text
+  link hold
+    like text
+    fall text <>
   # in `note` mode, the one project every secret lives in
-  link bank, like text
+  link bank
+    like text
+    fall text <>
   link bind, like text
   link root, like boolean
   # Config: names whose values are NOT secret and live in the declaration
   # itself. A bucket name, a port, a public site url. A process needs them
   # exactly as much as it needs the secrets, and keeping them in a separate
   # file is how the two drift.
-  link fact, list hold
+  link fact
+    list hold
+    fall make list
   link need, list need
   link lock, list lock
   link cast, list text
@@ -167,6 +187,9 @@ form leaf
   # hand-rolled reader kept one `<...>` per line, so `time <made>,
   # <toss>` parsed as a cache with no fetch time. The parser was fixed
   # and this field was never added, which left the same truncation one
-  # `list zone, <a>, <b>` away from happening again.
-  link more, list text
+  # `list zone, <a>, <b>` away from happening again. Empty when a `make leaf`
+  # builds a line with no values of its own.
+  link more
+    list text
+    fall make list
   link leaf, list leaf

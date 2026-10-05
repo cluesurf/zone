@@ -1,4 +1,4 @@
-load @term/base/code/maybe
+load @term/base/maybe
   find maybe
   find is-none
   find unwrap
@@ -54,16 +54,16 @@ load ../call/base
 load ../tool/ask
   find gate
 
-load @term/base/code/text
+load @term/base/text
   find text
   find to-upper-case
   find replace-all
 
-load @term/base/code/list
+load @term/base/list
   find list
   find size
 
-load @term/base/code/integer
+load @term/base/integer
   find integer
 
 load ../tool/base
@@ -74,7 +74,7 @@ load ../tool/base
   find show-miss
 
 task call
-  note async
+  mark async
   take sort, like text
   take name, like text
   take list, like list
@@ -122,7 +122,6 @@ task call
 
   save pass
     call read-code
-      wait true
       bind kind, read kind
       bind spot, read spot
   save pass-in

@@ -35,15 +35,15 @@
 # file a value came from, and those files are being deleted, so the
 # line would have outlived its subject and become a lie.
 
-load @term/base/code/text
+load @term/base/text
   find text
 
-load @term/base/code/list
+load @term/base/list
   find list
   find push
   find size
 
-load @term/base/code/boolean
+load @term/base/boolean
   find boolean
 
 load ../base

@@ -9,11 +9,11 @@
 #
 # Run with: term test
 
-load @term/base/code/text
+load @term/base/text
   find text
   find contains
 
-load @term/base/code/list
+load @term/base/list
   find list
 
 load ../code/config/zone
@@ -21,9 +21,6 @@ load ../code/config/zone
 
 load ../code/seal/cache
   find show-file
-
-load ../code/tool/base
-  find is-equal
 
 # What `show-file` writes, read straight back. Both stamps have to survive.
 #

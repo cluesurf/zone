@@ -10,12 +10,12 @@
 # `hide` is the one that matters. A credential typed with echo on sits in
 # the scrollback, and scrollback ends up in screenshots and screen shares.
 
-load @term/base/code/text
+load @term/base/text
   find text
   find to-upper-case
   find replace-all
 
-load @term/base/code/boolean
+load @term/base/boolean
   find boolean
 
 # Read a value with echo off. The prompt goes to stderr so that piping the

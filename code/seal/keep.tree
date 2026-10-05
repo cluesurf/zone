@@ -12,21 +12,21 @@
 # It is stored tone-packed rather than as raw bytes, because a keystore holds
 # text and tone is what this codebase writes a payload as.
 
-load @term/base/code/text
+load @term/base/text
   find text
 
-load @term/base/code/bytes
+load @term/base/bytes
   find bytes
 
-load @term/base/code/boolean
+load @term/base/boolean
   find boolean
 
-load @term/base/code/maybe
+load @term/base/maybe
   find maybe
   find unwrap
   find is-none
 
-load @term/base/code/tone
+load @term/base/tone
   find tone-pack
   find tone-unpack
 
@@ -73,13 +73,12 @@ task seal-seat
 # Make a key and store it. Returns the key, so the caller can use it at once
 # without a second read.
 task make-seal
-  note async
+  mark async
   take kind, like text
   take spot, like seat
   like bytes
   save key
     call make-key
-      wait true
   call put
     bind kind, read kind
     bind spot, read spot
@@ -91,7 +90,7 @@ task make-seal
 
 # The key, if this machine has one.
 task read-seal
-  note async
+  mark async
   take kind, like text
   take spot, like seat
   like maybe
@@ -100,7 +99,6 @@ task read-seal
     call read-code
       bind kind, read kind
       bind spot, read spot
-      wait true
   fork case, read got
     case none
       send back
@@ -115,7 +113,7 @@ task read-seal
 
 # Whether a key is there, without reading it.
 task have-seal
-  note async
+  mark async
   take kind, like text
   take spot, like seat
   like boolean
@@ -123,7 +121,6 @@ task have-seal
     call read-seal
       bind kind, read kind
       bind spot, read spot
-      wait true
   fork case, read got
     case none
       send back
@@ -135,10 +132,9 @@ task have-seal
 # Remove the local key. The cache it opened becomes unreadable, which is not
 # a loss: the cache is a speed layer and the values are still at the provider.
 task toss-seal
-  note async
+  mark async
   take kind, like text
   take spot, like seat
   call burn
     bind kind, read kind
     bind spot, read spot
-    wait true

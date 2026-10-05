@@ -10,18 +10,18 @@
 # ends up in a log, a screenshot or a chat message, and the only way to stop
 # that is not to build the path.
 
-load @term/base/code/text
+load @term/base/text
   find text
 
-load @term/base/code/list
+load @term/base/list
   find list
   find push
   find size
 
-load @term/base/code/boolean
+load @term/base/boolean
   find boolean
 
-load @term/base/code/maybe
+load @term/base/maybe
   find maybe
   find is-none
 
@@ -54,21 +54,19 @@ load ../tool/base
 
 # The declaration this directory runs under, innermost first.
 task read-here
-  note async
+  mark async
   like list
   send back
     call read-decks
-      wait true
 
 task list
-  note async
+  mark async
   take spot, like text
   take alias, like boolean
   like number
 
   save all
     call read-here
-      wait true
   fork test
     hook test
       call is-equal

@@ -24,15 +24,15 @@ load ../base
   find pass
   find hold
 
-load @term/base/code/text
+load @term/base/text
   find text
   find to-upper-case
   find replace-all
 
-load @term/base/code/list
+load @term/base/list
   find list
 
-load @term/base/code/boolean
+load @term/base/boolean
   find boolean
 
 # Whether the provider tool is installed.
@@ -100,7 +100,7 @@ bind do-bitwarden-read-many
 
 # Exportable wrapper: a native `bind` is file-local.
 task bitwarden-read-many
-  note async
+  mark async
   take body, like text
   take team, like text
   take list, like list
@@ -121,7 +121,7 @@ bind do-bitwarden-projects
 
 # Exportable wrapper: a native `bind` is file-local.
 task bitwarden-list
-  note async
+  mark async
   take body, like text
   take team, like text
   like list
@@ -174,7 +174,7 @@ task bitwarden-read
 #
 # Returns `made` or `grew`, so the caller can say which happened.
 bind do-bitwarden-put
-  note async
+  mark async
   take body, like text
   take team, like text
   take bank, like text
@@ -191,7 +191,7 @@ bind do-bitwarden-put
 # readers in `code/tool/base.tree`. A note can name several zones, and
 # rewriting it to the one being filed under drops the others.
 bind do-bitwarden-note
-  note async
+  mark async
   take body, like text
   take team, like text
   take name, like text
@@ -201,7 +201,7 @@ bind do-bitwarden-note
 
 # Every secret's name and note. METADATA ONLY: no value is fetched.
 bind do-bitwarden-notes
-  note async
+  mark async
   take body, like text
   take team, like text
   like list
@@ -210,7 +210,7 @@ bind do-bitwarden-notes
 
 # Replace one secret's note, leaving its value exactly as it was.
 bind do-bitwarden-mark
-  note async
+  mark async
   take body, like text
   take team, like text
   take name, like text
@@ -221,7 +221,7 @@ bind do-bitwarden-mark
 
 # Remove one secret. True if it was there.
 bind do-bitwarden-drop
-  note async
+  mark async
   take body, like text
   take team, like text
   take path, like text
@@ -232,7 +232,7 @@ bind do-bitwarden-drop
 
 # Read one secret's value. Empty if it is not there.
 bind do-bitwarden-one
-  note async
+  mark async
   take body, like text
   take team, like text
   take name, like text
@@ -242,7 +242,7 @@ bind do-bitwarden-one
 
 # Exportable wrappers: a native `bind` is file-local.
 task bitwarden-put
-  note async
+  mark async
   take body, like text
   take team, like text
   take bank, like text
@@ -261,7 +261,7 @@ task bitwarden-put
       wait true
 
 task bitwarden-note
-  note async
+  mark async
   take body, like text
   take team, like text
   take name, like text
@@ -274,7 +274,7 @@ task bitwarden-note
       wait true
 
 task bitwarden-notes
-  note async
+  mark async
   take body, like text
   take team, like text
   like list
@@ -285,7 +285,7 @@ task bitwarden-notes
       wait true
 
 task bitwarden-mark
-  note async
+  mark async
   take body, like text
   take team, like text
   take name, like text
@@ -300,7 +300,7 @@ task bitwarden-mark
       wait true
 
 task bitwarden-drop
-  note async
+  mark async
   take body, like text
   take team, like text
   take path, like text
@@ -315,7 +315,7 @@ task bitwarden-drop
       wait true
 
 task bitwarden-one
-  note async
+  mark async
   take body, like text
   take team, like text
   take name, like text

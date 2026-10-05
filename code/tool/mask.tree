@@ -6,12 +6,12 @@
 # once a masked form is printable someone will paste it into an issue. The
 # only rendering of a secret this library offers is whether one exists.
 
-load @term/base/code/text
+load @term/base/text
   find text
   find to-upper-case
   find replace-all
 
-load @term/base/code/boolean
+load @term/base/boolean
   find boolean
 
 # How a present-or-absent fact is rendered everywhere in the console.

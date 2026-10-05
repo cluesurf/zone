@@ -21,17 +21,17 @@
 # from the root belongs to the root, because that is where its one stored
 # value lives.
 
-load @term/base/code/text
+load @term/base/text
   find text
 
-load @term/base/code/list
+load @term/base/list
   find list
   find size
 
-load @term/base/code/boolean
+load @term/base/boolean
   find boolean
 
-load @term/base/code/maybe
+load @term/base/maybe
   find maybe
   find is-none
   find unwrap
@@ -87,9 +87,7 @@ load ../tool/base
   find here
   find show-size
   find show-count
-  find add
   find more
-  find is-equal
 
 # The declaration alone: what a command needs when it never opens the
 # provider. `scan` is the whole reason this is separate from `gear`.
@@ -107,12 +105,11 @@ form gear
   link deck, like text
 
 task home-up
-  note async
+  mark async
   like home
 
   save decks
     call read-decks
-      wait true
   fork test
     hook test
       call is-equal
@@ -149,12 +146,11 @@ task home-up
 # both already on disk, so demanding a credential it never uses would refuse
 # a command that can answer perfectly well without one.
 task gear-up
-  note async
+  mark async
   like gear
 
   save it
     call home-up
-      wait true
   save root, read it/root
   save deck, read it/deck
 
@@ -180,7 +176,6 @@ task gear-up
   save bond-got
     call read-bond
       bind hold, text <>
-      wait true
   fork test
     hook test
       call is-none
@@ -200,7 +195,6 @@ task gear-up
         call berth
           bind bond, read bond
           bind sort, read bond/base
-      wait true
   fork test
     hook test
       call is-none
@@ -400,14 +394,13 @@ task home-or-halt
 # terminal the whole of it is taken. `zone/test/save.sh` holds every one
 # of those shapes through the provider, the cache and a child process.
 task put-one
-  note async
+  mark async
   take name, like text
   take commit, like boolean
   like number
 
   save it
     call gear-up
-      wait true
   save home
     call home-or-halt
       bind root, read it/root
@@ -493,7 +486,6 @@ task put-one
           bind body, read it/token
           bind team, read it/root/team
           bind name, read key
-          wait true
       bind want, read home
 
   save what
@@ -504,7 +496,6 @@ task put-one
       bind mind, read mind
       bind name, read key
       bind code, read body
-      wait true
 
   call show-line
     call join-text
@@ -542,13 +533,12 @@ task stored-as
 
 # `zone toss <name>` — remove one value at the provider.
 task drop-one
-  note async
+  mark async
   take name, like text
   like number
 
   save it
     call gear-up
-      wait true
   save home
     call home-or-halt
       bind root, read it/root
@@ -564,7 +554,6 @@ task drop-one
       bind team, read it/root/team
       bind path, read home
       bind name, read key
-      wait true
 
   fork test
     hook test
@@ -599,13 +588,12 @@ task drop-one
 # prints it. The cache is filled by `zone read`, which is one round trip
 # per project; this is the narrower question of whether one name exists.
 task see-one
-  note async
+  mark async
   take name, like text
   like number
 
   save it
     call gear-up
-      wait true
   save home
     call home-or-halt
       bind root, read it/root
@@ -620,7 +608,6 @@ task see-one
       bind body, read it/token
       bind team, read it/root/team
       bind name, read key
-      wait true
 
   fork test
     hook test
@@ -659,13 +646,12 @@ task see-one
 # The safer half of showing a value: it goes where a paste can reach it and
 # nowhere a scrollback, a screen recording or a shoulder can.
 task hook-one
-  note async
+  mark async
   take name, like text
   like number
 
   save it
     call gear-up
-      wait true
   save home
     call home-or-halt
       bind root, read it/root
@@ -680,7 +666,6 @@ task hook-one
       bind body, read it/token
       bind team, read it/root/team
       bind name, read key
-      wait true
 
   fork test
     hook test
@@ -730,14 +715,13 @@ task hook-one
 #   a sealed value nothing declares any more       dead weight, and a hint
 #                                                  that a name was renamed
 task scan-all
-  note async
+  mark async
   like number
 
   # `home-up`, not `gear-up`: everything below is read from disk, so a
   # missing bootstrap credential must not refuse the command.
   save it
     call home-up
-      wait true
   save root, read it/root
 
   save at-cache

@@ -6,11 +6,11 @@
 # secret value: access is proven by opening the project, not by fetching
 # from it.
 
-load @term/base/code/maybe
+load @term/base/maybe
   find is-some
   find is-none
   find unwrap
-load @term/base/code/boolean
+load @term/base/boolean
   find and
 load ../config/machine
   find read-bond
@@ -32,11 +32,11 @@ load ../hold/base
 load ../hold/take
   find miss-need
 
-load @term/base/code/text
+load @term/base/text
   find text
   find to-upper-case
   find replace-all
-load @term/base/code/list
+load @term/base/list
   find is-empty
 
 load ../tool/base
@@ -46,7 +46,7 @@ load ../tool/base
   find mark-test
 
 task vet
-  note async
+  mark async
   take sort, like text
 
   save bond
@@ -91,7 +91,6 @@ task vet
       bind sort, read sort-in
   save pass
     call read-code
-      wait true
       bind kind, read kind
       bind spot, read spot
   call mark-test

@@ -24,25 +24,24 @@
 # When this reports nothing left to do on every machine, the retired
 # reader (`old-zones` and `note-field`) can go.
 
-load @term/base/code/text
+load @term/base/text
   find text
 
-load @term/base/code/list
+load @term/base/list
   find list
   find push
   find size
 
-load @term/base/code/boolean
+load @term/base/boolean
   find boolean
 
-load @term/base/code/maybe
+load @term/base/maybe
   find maybe
   find is-none
   find unwrap
 
 load ../base
   find spot
-  find gear
 
 load ./one
   find gear-up
@@ -66,10 +65,9 @@ load ../tool/base
   find here
   find show-size
   find text-of
-  find add
 
 task wash
-  note async
+  mark async
   take commit, like boolean
   like number
 
@@ -79,7 +77,6 @@ task wash
   # declaration or which organization is in force.
   save it
     call gear-up
-      wait true
 
   # EVERY SECRET IN THE ORGANIZATION, metadata only. The note comes back
   # on the listing, so the REPORT fetches no value at all.
@@ -87,7 +84,6 @@ task wash
     call bitwarden-notes
       bind body, read it/token
       bind team, read it/root/team
-      wait true
 
   save moved
     make list
@@ -211,7 +207,6 @@ task wash
               call note-make
                 call note-zones
                   read one/note
-            wait true
 
           save done
             call add

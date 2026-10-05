@@ -14,15 +14,15 @@
 # `zone show --files` prints what this found, in order, so "which declaration
 # am I actually running" is one command rather than a guess.
 
-load @term/base/code/text
+load @term/base/text
   find text
 
-load @term/base/code/list
+load @term/base/list
   find list
   find push
   find size
 
-load @term/base/code/boolean
+load @term/base/boolean
   find boolean
 
 load ../base
@@ -67,7 +67,7 @@ task spot-file
 # ends when the directory stops changing. A missing file is not an error,
 # because most directories on the way up have none.
 task find-decks
-  note async
+  mark async
   take dir, like text
   like list
   save all
@@ -121,12 +121,11 @@ task find-decks
 
 # The declarations above the working directory.
 task read-decks
-  note async
+  mark async
   like list
   send back
     call find-decks
       call here
-      wait true
 
 # The one message for "there is no declaration here".
 #

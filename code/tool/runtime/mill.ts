@@ -41,7 +41,7 @@ var __read = (() => {
   };
   var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
-  // deck/term/deck/term/deck/deck/code/read.ts
+  // code/read.ts
   var read_exports = {};
   __export(read_exports, {
     deepFormOf: () => deepFormOf,
@@ -55,7 +55,7 @@ var __read = (() => {
     valueOf: () => valueOf
   });
 
-  // deck/term/deck/term/deck/make/code/parser/diagnostic.ts
+  // ../make/code/parser/diagnostic.ts
   var CATALOG = {
     "syntax-error": {
       code: 1,
@@ -158,7 +158,7 @@ var __read = (() => {
       code: 15,
       message: "this hold is outside the decidable linear fragment and was not proven",
       severity: "error",
-      fix: "rewrite it as a linear comparison (<, <=, >, >=, ==), prove it in the dependent kernel with `calm` / `fold` / `cite`, or mark the claim `note open` to leave it open and counted"
+      fix: "rewrite it as a linear comparison (<, <=, >, >=, ==), prove it in the dependent kernel with `calm` / `fold` / `cite`, or mark the claim `mark open` to leave it open and counted"
     },
     "duplicate-instance": {
       code: 16,
@@ -191,7 +191,7 @@ var __read = (() => {
       code: 21,
       message: "this claim has no proof",
       severity: "error",
-      fix: "write a `task` of the same name whose body proves it, or mark the rule `note open` to leave it open and counted"
+      fix: "write a `task` of the same name whose body proves it, or mark the rule `mark open` to leave it open and counted"
     },
     // Using a claim that nobody has proven yet. The claim is a promise, and code that runs cannot be built on one.
     "open-claim-used": {
@@ -221,6 +221,104 @@ var __read = (() => {
       message: "this proof calls something impure",
       severity: "error",
       fix: "a proof may call only pure tasks: no native calls, no async, no writes through a record it did not make"
+    },
+    // A `twin` is another implementation of a task, which the compiler may choose in its place, so it must be able to
+    // agree with it (note/term/optimize/admission.md). Each of these is a twin that could not.
+    "twin-unknown": {
+      code: 26,
+      message: "this twin names no task",
+      severity: "error",
+      fix: "a twin is written `twin <task>, name <label>` beside a task this module can see"
+    },
+    "twin-of-impure": {
+      code: 27,
+      message: "this twin is of a task that is not pure",
+      severity: "error",
+      fix: "only a pure task can be computed another way: one that reaches native code, is async, or writes what it did not make has an order of effects a twin would have to repeat"
+    },
+    "twin-impure": {
+      code: 28,
+      message: "this twin is not pure",
+      severity: "error",
+      fix: "a twin of a pure task must be pure itself, or say `mark trust` to be admitted as trusted"
+    },
+    "twin-signature": {
+      code: 29,
+      message: "this twin's parameters are not its task's",
+      severity: "error",
+      fix: "name the task's parameters, in the task's order, with no types: a twin takes them from its task"
+    },
+    "twin-loops": {
+      code: 30,
+      message: "this twin is not shown to end where its task is",
+      severity: "error",
+      fix: "a twin that loops where its task returns is a wrong answer, not a faster one"
+    },
+    "twin-cycle": {
+      code: 31,
+      message: "these twins call each other in a cycle",
+      severity: "error",
+      fix: "break the cycle: a twin of one task may call another task, but not one whose twin calls back"
+    },
+    "guard-impure": {
+      code: 32,
+      message: "this twin's run-time check is not pure",
+      severity: "error",
+      fix: "a `hook test` decides which implementation runs, so it may not change anything or call native code"
+    },
+    "twin-choice": {
+      code: 34,
+      message: "this choice of implementation cannot be made",
+      severity: "error",
+      fix: "choose a twin the task has, eligible on this target, whose conditions the selection pass can honor"
+    },
+    "ease-unknown": {
+      code: 33,
+      message: "this relaxation is not one Term defines",
+      severity: "error",
+      fix: "the relaxations are `float-order` and `float-fused` (note/term/optimize/words.md)"
+    },
+    // A supervision tree OTP would start and then misbehave: a `transient` worker restarts only when it raises, so one
+    // whose work can raise nothing never restarts, and is a `temporary` under a misleading name (check/supervise.ts)
+    "dead-restart": {
+      code: 35,
+      message: "this transient worker can never restart",
+      severity: "error",
+      fix: "make it `temporary` if it is meant to run once, or let its work raise the failure it should restart on"
+    },
+    // `mark private` on a task makes it visible only inside the file that defines it. Until 2026-10-02 the mark was
+    // read and nothing held anyone to it: names are package-global, so another file could call the task, or `find`
+    // it in a `load`, and the output exported it (check/private.ts).
+    "private-name": {
+      code: 36,
+      message: "this name is private to another file",
+      severity: "error",
+      fix: "remove `mark private` from the definition, or use it only from the file that defines it"
+    },
+    // `note private` is the old spelling. Still honored, so code written before the change keeps building.
+    "note-private": {
+      code: 37,
+      message: "`note private` is the old spelling of `mark private`",
+      severity: "warning",
+      fix: "write `mark private`: privacy is a mark the compiler enforces, and a `note` is documentation"
+    },
+    // a call to an async task OUTSIDE every task (a top-level `host`, a component's body, a closure in either that is
+    // not async), where nothing can wait for it: it hands back a pending value. `tick` says that is meant. Behind
+    // the await switch (check/effects.ts, `setAwaitOutsideTasks`). note/term/plan/await-by-default-and-mark-metadata.md
+    "async-outside-task": {
+      code: 39,
+      message: "a call to an async task outside any task, where nothing waits for it",
+      severity: "error",
+      fix: "move the call into a task, or write `tick` before it to start it without waiting"
+    },
+    // `note async`, `note unsafe`, `note draft` ...: metadata is `mark` since 2026-10-02, and `note <word>` is the
+    // old spelling. Still read the same (the mill mints both as one form), so code written before keeps building.
+    // note/term/plan/await-by-default-and-mark-metadata.md, section 4
+    "note-metadata": {
+      code: 38,
+      message: "`note` is the old spelling of metadata, which is `mark`",
+      severity: "warning",
+      fix: "write `mark` for the `note`: `term lint --fix` rewrites it, and `note` is left for documentation"
     }
   };
   function diagnose(name, input) {
@@ -238,7 +336,7 @@ var __read = (() => {
     };
   }
 
-  // deck/term/deck/term/deck/make/code/parser/token.ts
+  // ../make/code/parser/token.ts
   var INTERPOLATION_MATCHERS = [
     "close-brace" /* CloseBrace */,
     "close-paren" /* CloseParen */,
@@ -534,8 +632,9 @@ var __read = (() => {
     return { ok: true, tokens };
   }
 
-  // deck/term/deck/term/deck/make/code/parser/event.ts
+  // ../make/code/parser/event.ts
   var commaPopsOneLevel = true;
+  var commaAfterLeafStays = true;
   function buildEvents(tokens) {
     const events = [];
     const contexts = [{ kind: "root" /* Root */ }];
@@ -545,6 +644,7 @@ var __read = (() => {
     const diagnostics = [];
     let atLineStart = true;
     let lastDepth = 0;
+    let afterLeaf = "";
     const top = () => contexts[contexts.length - 1];
     const push = (frame) => contexts.push(frame);
     const pop = () => contexts.pop();
@@ -563,6 +663,8 @@ var __read = (() => {
     let token = tokens.head;
     if (token) {
       do {
+        const leafBefore = afterLeaf;
+        afterLeaf = "";
         switch (token.kind) {
           case "open-brace" /* OpenBrace */:
             openInterpolation(token);
@@ -576,6 +678,7 @@ var __read = (() => {
             break;
           case "close-angle" /* CloseAngle */:
             closeText(token);
+            afterLeaf = "literal";
             break;
           case "open-paren" /* OpenParen */:
             if (top()?.kind === "name" /* Name */) {
@@ -585,10 +688,10 @@ var __read = (() => {
             push({ kind: "paren" /* Paren */, token });
             break;
           case "close-paren" /* CloseParen */:
-            closeParen();
+            afterLeaf = closeParen() ? "call" : "";
             break;
           case "comma" /* Comma */:
-            comma();
+            comma(leafBefore);
             break;
           case "comment" /* Comment */:
             atLineStart = false;
@@ -597,13 +700,16 @@ var __read = (() => {
           case "decimal" /* Decimal */:
             atLineStart = false;
             decimal(token);
+            afterLeaf = "literal";
             break;
           case "radix" /* Radix */:
             atLineStart = false;
             radix(token);
+            afterLeaf = "literal";
             break;
           case "space" /* Space */:
             space(token);
+            afterLeaf = leafBefore;
             break;
           case "newline" /* Newline */:
             closeLine();
@@ -620,6 +726,7 @@ var __read = (() => {
           case "integer" /* Integer */:
             atLineStart = false;
             integer(token);
+            afterLeaf = "literal";
             break;
           default:
             break;
@@ -756,10 +863,13 @@ var __read = (() => {
         value: parseInt(token2.text.replace(/,/g, ""), 10)
       });
     }
-    function comma() {
+    function comma(leafBefore) {
       if (top()?.kind === "name" /* Name */) {
         pop();
         events.push({ kind: "close-name" /* CloseName */ });
+      }
+      if (leafBefore === "call" && commaAfterLeafStays !== false || leafBefore === "literal" && commaAfterLeafStays === true) {
+        return;
       }
       const closeOne = () => {
         if (top()?.kind !== "group" /* Group */) {
@@ -860,7 +970,9 @@ var __read = (() => {
       if (owned && top()?.kind === "group" /* Group */) {
         events.push({ kind: "close-group" /* CloseGroup */ });
         pop();
+        return true;
       }
+      return false;
     }
     function closeInterpolation() {
       walk: while (true) {
@@ -927,7 +1039,7 @@ var __read = (() => {
     }
   }
 
-  // deck/term/deck/term/deck/make/code/parser/tree.ts
+  // ../make/code/parser/tree.ts
   function setParent(child, parent) {
     Object.defineProperty(child, "parent", {
       value: parent,
@@ -1203,7 +1315,7 @@ var __read = (() => {
     return { ok: true, tree };
   }
 
-  // deck/term/deck/term/deck/deck/code/read.ts
+  // code/read.ts
   function literal(node, source) {
     const extent = tokenExtent(node);
     if (!extent) {

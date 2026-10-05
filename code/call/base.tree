@@ -12,7 +12,7 @@
 load ../base
   find hold
 
-load @term/base/code/text
+load @term/base/text
   find text
   find to-upper-case
   find replace-all
@@ -20,10 +20,10 @@ load @term/base/code/text
 load ../tool/base
   find join-text
 
-load @term/base/code/list
+load @term/base/list
   find list
 
-load @term/base/code/integer
+load @term/base/integer
   find integer
 
 # Turn a kebab-case declared name into the environment variable a program

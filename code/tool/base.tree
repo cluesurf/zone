@@ -9,16 +9,16 @@
 # Nothing here renders a credential. `show-line` is for configuration and
 # status only.
 
-load @term/base/code/text
+load @term/base/text
   find text
 
-load @term/base/code/list
+load @term/base/list
   find list
 
-load @term/base/code/boolean
+load @term/base/boolean
   find boolean
 
-load @term/base/code/maybe
+load @term/base/maybe
   find maybe
 
 load ../base

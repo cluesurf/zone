@@ -9,7 +9,7 @@
 #
 # Run with: term test
 
-load @term/base/code/list
+load @term/base/list
   find list
   find push
   find size

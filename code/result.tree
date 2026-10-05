@@ -1,5 +1,5 @@
 
-load @term/base/code/maybe
+load @term/base/maybe
   find maybe
 
 form result
@@ -137,7 +137,7 @@ form result
 task catch
   take work, like task
   like result
-  note unsafe
+  mark unsafe
     save value
       call work
     send back

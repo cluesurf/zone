@@ -25,10 +25,10 @@
 #   more   EVERY `<...>` value, in order, so a multi-value line keeps them all
 #   leaf   nested lines, from an indent or from a comma, in written order
 
-load @term/base/code/text
+load @term/base/text
   find text
 
-load @term/base/code/list
+load @term/base/list
   find list
 
 load ../base

@@ -15,23 +15,23 @@
 # The provider is touched here and by `zone save`, and by nothing anyone runs
 # in a loop. `zone load` never reaches the network.
 
-load @term/base/code/text
+load @term/base/text
   find text
   find ends-with
   find split
 
-load @term/base/code/bytes
+load @term/base/bytes
   find bytes
 
-load @term/base/code/list
+load @term/base/list
   find list
   find push
   find size
 
-load @term/base/code/boolean
+load @term/base/boolean
   find boolean
 
-load @term/base/code/maybe
+load @term/base/maybe
   find maybe
   find is-none
   find unwrap
@@ -54,6 +54,7 @@ load ../config/zone
   find path-chain
   find mine-zone
   find find-spot
+  find all-paths
 
 load ../config/machine
   find read-bond
@@ -95,32 +96,8 @@ load ../tool/base
   find here
   find read-file
   find save-private
-  find is-equal
   find now-stamp
   find then-stamp
-
-# Every zone path in the tree, which is every project to fetch.
-task all-paths
-  take at, like spot
-  like list
-  save out
-    make list
-  call push
-    bind list, read out
-    bind item, read at/path
-  walk list, read at/zone
-    hook next
-      take site, name kid
-      walk list
-        call all-paths
-          read kid
-        hook next
-          take site, name one
-          call push
-            bind list, read out
-            bind item, read one
-  send back
-    read out
 
 # One zone's own declared names, sealed from what the provider holds.
 #
@@ -175,7 +152,7 @@ task holds-for
     read out
 
 task seal-spot
-  note async
+  mark async
   take key, like bytes
   take at, like spot
   take all, like list
@@ -234,7 +211,6 @@ task seal-spot
           bind path, read at/path
           bind name, read one/name
           bind plain, read found
-          wait true
       call push
         bind list, read locks
         bind item
@@ -254,7 +230,6 @@ task seal-spot
           bind at, read kid
           bind all, read all
           bind note, read note
-          wait true
       call push
         bind list, read kids
         bind item, read down
@@ -281,7 +256,7 @@ task seal-spot
 # that name collides with it and the error is a type mismatch on a return
 # value several statements away. The console hook is still called `read`.
 task pull
-  note async
+  mark async
   take spot, like text
   take fresh, like boolean
   take name, like text
@@ -297,11 +272,9 @@ task pull
       send back
         call see-one
           read name
-          wait true
 
   save decks
     call read-decks
-      wait true
   fork test
     hook test
       call is-equal
@@ -377,7 +350,6 @@ task pull
               save mark-now
                 call mark-deck
                   read body
-                  wait true
               save same-deck
                 call equal
                   read old/deck
@@ -403,7 +375,6 @@ task pull
   save bond-got
     call read-bond
       bind hold, read root/base
-      wait true
   fork test
     hook test
       call is-none
@@ -425,7 +396,6 @@ task pull
       bind spot
         call seal-seat
           read bond
-      wait true
   fork test
     hook test
       call is-none
@@ -445,7 +415,6 @@ task pull
         call berth
           bind bond, read bond
           bind sort, read bond/base
-      wait true
   fork test
     hook test
       call is-none
@@ -522,7 +491,6 @@ task pull
           bind kind, read root/base
           bind body, read token
           bind team, read root/team
-          wait true
       walk list, read banks
         hook next
           take site, name one
@@ -566,7 +534,6 @@ task pull
       bind body, read token
       bind team, read root/team
       bind list, read binds
-      wait true
 
   save sealed
     call seal-spot
@@ -576,7 +543,6 @@ task pull
       bind note
         call is-note
           read root
-      wait true
 
   save at-cache
     call spot-cache
@@ -609,7 +575,6 @@ task pull
   save mark
     call mark-deck
       read body
-      wait true
 
   # The record is built into its own variable first. A `call` whose only
   # child is a `make` gets applied to the statement that follows it.

@@ -1,4 +1,4 @@
-load @term/base/code/maybe
+load @term/base/maybe
   find maybe
   find is-none
   find unwrap
@@ -23,16 +23,15 @@ load ../config/machine
 load ../save/base
   find pick
   find keep
-  find get
 
 load ../hold/base
   find good
 
-load @term/base/code/text
+load @term/base/text
   find text
   find to-upper-case
   find replace-all
-load @term/base/code/boolean
+load @term/base/boolean
   find boolean
 
 load ../tool/base
@@ -41,7 +40,7 @@ load ../tool/base
   find yes-no
 
 task show
-  note async
+  mark async
   take sort, like text
 
   save bond
@@ -102,6 +101,5 @@ task show
         text <code    >
         call yes-no
           call keep
-            wait true
             bind kind, read kind
             bind spot, read spot

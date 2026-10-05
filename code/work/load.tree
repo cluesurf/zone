@@ -20,18 +20,18 @@
 # given. An orchestrator that went to the trouble of injecting a value meant
 # it, and that is the safe direction.
 
-load @term/base/code/text
+load @term/base/text
   find text
 
-load @term/base/code/list
+load @term/base/list
   find list
   find push
   find size
 
-load @term/base/code/boolean
+load @term/base/boolean
   find boolean
 
-load @term/base/code/maybe
+load @term/base/maybe
   find maybe
   find is-none
   find unwrap
@@ -108,7 +108,7 @@ task spot-cache
         read cache-spot
 
 task load
-  note async
+  mark async
   take spot, like text
   take main, like text
   take list, like list
@@ -117,7 +117,6 @@ task load
 
   save decks
     call read-decks
-      wait true
   fork test
     hook test
       call is-equal
@@ -226,13 +225,11 @@ task load
           call unwrap
             call read-bond
               bind hold, text <>
-              wait true
       save has-key
         call read-seal
           bind kind
             call pick
           bind spot, read seat
-          wait true
       fork test
         hook test
           call is-none
@@ -244,13 +241,11 @@ task load
             bind kind
               call pick
             bind spot, read seat
-            wait true
 
       call pull
         bind spot, read want
         bind fresh, code true
         bind name, text <>
-        wait true
 
       save cache
         call mine-file
@@ -283,7 +278,6 @@ task load
   save bond
     call read-bond
       bind hold, read root/base
-      wait true
   fork test
     hook test
       call is-none
@@ -303,7 +297,6 @@ task load
       bind spot
         call seal-seat
           read bond-in
-      wait true
   fork test
     hook test
       call is-none
@@ -370,7 +363,6 @@ task load
           bind path, read lock-in/path
           bind name, read one/name
           bind code, read lock-in/code
-          wait true
 
       # One value, published under every spelling this zone asks for: each
       # cast, and each `name` spelling under each cast. That is how six names for

@@ -2,8 +2,7 @@
 deck @term/zone
   head <Secret access: bind a machine, hold its credential in the system keystore, call commands with temporary secrets>
   text <The Term Secret Access Library>
-  mark <0.0.1>
-  bear ./code
+  mark <0.0.2>
   test ./test
   line ./code/line
   make <security>
@@ -11,5 +10,5 @@ deck @term/zone
   make <configuration>
   make <library>
   cite <Lance Pollard>, base <lp@elk.fm>
-  term <Apache 2.0>
+  lock <Apache-2.0>
   link @term/base, mark <0.0.x>

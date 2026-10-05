@@ -23,13 +23,13 @@
 # is sealed, and it travels with the value rather than being derived from
 # anything.
 
-load @term/base/code/text
+load @term/base/text
   find text
 
-load @term/base/code/list
+load @term/base/list
   find list
 
-load @term/base/code/bytes
+load @term/base/bytes
   find bytes
   find from-text
   find to-text
@@ -37,14 +37,14 @@ load @term/base/code/bytes
   find slice
   find length
 
-load @term/base/code/cryptography/random
+load @term/base/cryptography/random
   find bytes, name make-random
 
-load @term/base/code/cryptography/cipher
+load @term/base/cryptography/cipher
   find encrypt
   find decrypt
 
-load @term/base/code/tone
+load @term/base/tone
   find tone-pack
   find tone-unpack
 
@@ -72,7 +72,7 @@ task seal-extra
 # A fresh master key. Kept by the operating system's own keystore, never
 # written next to the cache it opens.
 task make-key
-  note async
+  mark async
   like bytes
   send back
     call make-random
@@ -80,7 +80,7 @@ task make-key
 
 # Seal one value against its address.
 task seal-value
-  note async
+  mark async
   take key, like bytes
   take path, like text
   take name, like text
@@ -98,7 +98,6 @@ task seal-value
       call seal-extra
         bind path, read path
         bind name, read name
-      wait true
   send back
     call tone-pack
       call concat
@@ -108,7 +107,7 @@ task seal-value
 # Open one value. Fails when the key, the nonce, the ciphertext or the
 # address is not the one it was sealed with, which is the whole point.
 task open-value
-  note async
+  mark async
   take key, like bytes
   take path, like text
   take name, like text
@@ -137,4 +136,3 @@ task open-value
         call seal-extra
           bind path, read path
           bind name, read name
-        wait true

@@ -22,18 +22,18 @@
 #
 # REPORTS BY DEFAULT AND WRITES ONLY ON `--commit`.
 
-load @term/base/code/text
+load @term/base/text
   find text
 
-load @term/base/code/list
+load @term/base/list
   find list
   find push
   find size
 
-load @term/base/code/boolean
+load @term/base/boolean
   find boolean
 
-load @term/base/code/maybe
+load @term/base/maybe
   find maybe
   find is-none
   find unwrap
@@ -82,7 +82,6 @@ load ../tool/base
   find here
   find have-file
   find read-file
-  find is-equal
   find more
   find put-secret
   find text-of
@@ -116,7 +115,7 @@ task send-tool
     text <>
 
 task post
-  note async
+  mark async
   take target, like text
   take spot, like text
   take place, like text
@@ -152,7 +151,6 @@ task post
 
   save decks
     call read-decks
-      wait true
   fork test
     hook test
       call is-equal
@@ -219,7 +217,6 @@ task post
   save bond-got
     call read-bond
       bind hold, text <>
-      wait true
   fork test
     hook test
       call is-none
@@ -239,7 +236,6 @@ task post
       bind spot
         call seal-seat
           read bond
-      wait true
   fork test
     hook test
       call is-none
@@ -306,7 +302,6 @@ task post
           bind path, read lock-in/path
           bind name, read one/name
           bind code, read lock-in/code
-          wait true
       save why
         call put-secret
           bind name, read tool

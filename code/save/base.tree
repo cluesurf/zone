@@ -20,15 +20,15 @@ load ../base
   find pass
   find mark
 
-load @term/base/code/text
+load @term/base/text
   find text
   find to-upper-case
   find replace-all
 
-load @term/base/code/boolean
+load @term/base/boolean
   find boolean
 
-load @term/base/code/maybe
+load @term/base/maybe
   find maybe
   find unwrap
 
@@ -166,14 +166,13 @@ bind no-code
 #
 # One place to check it, so nothing downstream has to remember to.
 task read-code
-  note async
+  mark async
   take kind, like text
   take spot, like seat
   like maybe
     head text
   save got
     call read-code-raw
-      wait true
       bind kind, read kind
       bind spot, read spot
   fork case, read got
@@ -194,7 +193,7 @@ task read-code
         read got
 
 task read-code-raw
-  note async
+  mark async
   take kind, like text
   take spot, like seat
   like maybe
@@ -220,7 +219,7 @@ task read-code-raw
 # Remove the local copy. This does not revoke anything remotely, which is why
 # the caller must say so out loud.
 task burn
-  note async
+  mark async
   take kind, like text
   take spot, like seat
   fork case, read kind
@@ -239,13 +238,12 @@ task burn
 
 # Whether a credential is filed for this seat, without opening it.
 task keep
-  note async
+  mark async
   take kind, like text
   take spot, like seat
   like boolean
   save body
     call read-code
-      wait true
       bind kind, read kind
       bind spot, read spot
   fork case, read body

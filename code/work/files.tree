@@ -8,14 +8,14 @@
 # Names the cache beside each one too, and whether it exists, because the
 # other half of that question is "and is anything cached for it".
 
-load @term/base/code/text
+load @term/base/text
   find text
 
-load @term/base/code/list
+load @term/base/list
   find list
   find size
 
-load @term/base/code/boolean
+load @term/base/boolean
   find boolean
 
 load ../config/find
@@ -32,15 +32,13 @@ load ../tool/base
   find halt
   find here
   find have-file
-  find is-equal
 
 task files
-  note async
+  mark async
   like number
 
   save all
     call read-decks
-      wait true
 
   fork test
     hook test

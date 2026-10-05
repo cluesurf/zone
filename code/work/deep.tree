@@ -8,10 +8,10 @@
 # complete perfectly, so this exists for that and nothing else. It prints
 # paths, never names and never values.
 
-load @term/base/code/text
+load @term/base/text
   find text
 
-load @term/base/code/list
+load @term/base/list
   find list
   find push
   find size
@@ -29,7 +29,6 @@ load ../tool/base
   find show-line
   find equal
   find read-file
-  find is-equal
   find more
 
 task walk-spots
@@ -55,11 +54,10 @@ task walk-spots
     read out
 
 task deep
-  note async
+  mark async
   like number
   save decks
     call read-decks
-      wait true
   fork test
     hook test
       call is-equal

@@ -20,20 +20,20 @@
 # and lines before it do not. Written order is the override order, with no
 # special case, because any other rule is one somebody has to remember.
 
-load @term/base/code/text
+load @term/base/text
   find text
   find split
 
-load @term/base/code/list
+load @term/base/list
   find list
   find push
   find size
   find reverse
 
-load @term/base/code/boolean
+load @term/base/boolean
   find boolean
 
-load @term/base/code/maybe
+load @term/base/maybe
   find maybe
   find unwrap
 
@@ -501,6 +501,31 @@ task mine-zone
       bind one, read one
       bind up, text <>
       bind code, false
+
+# Every zone path in the tree, which is every project to fetch. Here beside
+# `find-spot`, because both walk the tree: `read` and `one` each need it, and
+# `read` loads `one`, so neither could hold it for the other.
+task all-paths
+  take at, like spot
+  like list
+  save out
+    make list
+  call push
+    bind list, read out
+    bind item, read at/path
+  walk list, read at/zone
+    hook next
+      take site, name kid
+      walk list
+        call all-paths
+          read kid
+        hook next
+          take site, name one
+          call push
+            bind list, read out
+            bind item, read one
+  send back
+    read out
 
 # Resolve a path against the tree.
 #

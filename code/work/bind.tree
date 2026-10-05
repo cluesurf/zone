@@ -20,13 +20,13 @@ load ../save/base
 load ../tool/ask
   find sure
 
-load @term/base/code/text
+load @term/base/text
   find text
   find to-upper-case
   find replace-all
-load @term/base/code/list
+load @term/base/list
   find list
-load @term/base/code/file
+load @term/base/file
   find save-text
   find make-dir
 
