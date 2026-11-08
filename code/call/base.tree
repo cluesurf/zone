@@ -97,10 +97,15 @@ task run
 # The native spawn. Secrets are merged over the inherited environment rather
 # than replacing it, because a child still needs PATH and HOME to run at
 # all.
+#
+# A child that never started (no such program, not executable) is SAID, with
+# the program's name and the system's reason, and exits 127 as a shell does.
+# Until 2026-10-26 it returned 1 in silence, which hid `zone load x -- cmd`
+# spawning a program named `--` behind a bare exit 1.
 bind spawn
   take name, like text
   take list, like list
   take hold, like list
   like number
   case node
-    text <(function () \{ var extra = \{\}; for (var i = 0; i \< $hold.length; i++) \{ extra[$hold[i].name] = $hold[i].body \} var r = require("node:child_process").spawnSync($name, $list, \{ stdio: "inherit", env: Object.assign(\{\}, process.env, extra) \}); return r.status === null ? 1 : r.status \})()>
+    text <(function () \{ var extra = \{\}; for (var i = 0; i \< $hold.length; i++) \{ extra[$hold[i].name] = $hold[i].body \} var r = require("node:child_process").spawnSync($name, $list, \{ stdio: "inherit", env: Object.assign(\{\}, process.env, extra) \}); if (r.error) \{ process.stderr.write("Could not start " + JSON.stringify($name) + ": " + (r.error.code || r.error.message) + "\\n"); return 127 \} return r.status === null ? 1 : r.status \})()>

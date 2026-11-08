@@ -61,7 +61,7 @@ load @term/base/text
 
 load @term/base/list
   find list
-  find size
+  find length
 
 load @term/base/integer
   find integer
@@ -73,6 +73,10 @@ load ../tool/base
   find more
   find show-miss
 
+load ../tool/say
+  find name-run
+  find finish
+
 task call
   mark async
   take sort, like text
@@ -80,6 +84,9 @@ task call
   take list, like list
   like number
 
+  # Silent when it has nothing to say: the run opens only for a refusal
+  call name-run
+    text <call>
   save bond
     call read-bond
       bind hold, text <>
@@ -162,7 +169,7 @@ task call
 
   fork case
     call more
-      call size
+      call length
         read gone
       code 0
     case true
@@ -178,6 +185,8 @@ task call
       bind have, read all
       bind want, read claim-in/need
 
+  call finish
+    text <Called>
   send back
     call run
       bind name, read name

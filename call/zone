@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+# The `zone` command, run from a checkout.
+#
+# Install by putting this directory on your PATH, or by linking it:
+#
+#   ln -s "$PWD/call/zone" ~/.local/bin/zone
+#
+# It resolves its own location, so a link from anywhere works and the package
+# can move without the link breaking.
+#
+# WHAT IT RUNS, in order:
+#
+#   the source          `code/line/base.tree`, booted by the installed `term`
+#                       at the release `deck.tree` asks for
+#                       (`need @term/code, mark <2.10.x>`), which compiles it
+#                       on first use and caches the result. First, so an edit
+#                       in a checkout is what runs, never a bundle built
+#                       before it.
+#   host/line/run.mjs   the built console, written by
+#                       `term boot code/line/base.tree --out host/line`.
+#                       Runs with node alone, no Term and no compile, as
+#                       `call/zone.mjs` does.
+#
+# An install is `term save @term/zone -g`, whose launcher lives in
+# `~/.base/@term/code/call`. This file is the checkout's own.
+#
+# The built console also runs when there is no `term` on PATH, and while a
+# `link/` folder is here: a `term link` into a Term checkout, which a
+# release cannot boot through (the build cannot resolve the standard
+# library's units, and `test/alone.mjs` refuses the link). Remove it with
+# `rm -r link`, from this folder.
+#
+# `term` is looked for on PATH, skipping node_modules folders: a package
+# script puts an npm copy of an older Term first, which predates `need`.
+# ZONE_TERM names one outright.
+set -euo pipefail
+
+HERE="$(cd "$(dirname "$(readlink "${BASH_SOURCE[0]}" || echo "${BASH_SOURCE[0]}")")" && pwd)"
+ZONE="$(cd "$HERE/.." && pwd)"
+BUILT="$ZONE/host/line/run.mjs"
+
+front="${ZONE_TERM:-}"
+if [ -z "$front" ]; then
+  IFS=: read -r -a dirs <<< "$PATH"
+  for dir in "${dirs[@]}"; do
+    case "$dir" in */node_modules/*|*/node_modules) continue ;; esac
+    if [ -x "$dir/term" ]; then front="$dir/term"; break; fi
+  done
+fi
+
+if [ -n "$front" ] && [ ! -e "$ZONE/link" ]; then
+  # The release deck.tree asks for, resolved from inside the package, then
+  # named with `+<version>` so the command runs in the caller's directory
+  # (where its zone.tree is) on that release, and no environment variable
+  # reaches the command zone starts.
+  version="$(cd "$ZONE" && "$front" --version 2>/dev/null | tail -1)"
+  if [ -n "$version" ]; then
+    exec "$front" "+$version" boot "$ZONE/code/line/base.tree" -- "$@"
+  fi
+fi
+
+if [ -f "$BUILT" ]; then
+  exec node "$BUILT" "$@"
+fi
+
+echo "zone: no \`term\` to boot the source with, and no built console at $BUILT" >&2
+echo "zone: install Term (https://term.surf), or build one with \`term boot code/line/base.tree --out host/line\` from $ZONE" >&2
+exit 1

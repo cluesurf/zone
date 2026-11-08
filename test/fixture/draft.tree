@@ -7,6 +7,6 @@
 #
 # The marker shelves this directory and everything under it, and nothing
 # else. `test/base.tree` beside it is real and stays in the walk. See
-# the draft marker rules in `deck/term/CLAUDE.md`.
+# the draft marker rules in Term's own documentation.
 
 mark draft

@@ -51,8 +51,15 @@ load @term/base/boolean
 
 load ../tool/base
   find join-text
-  find show-line
   find yes-no
+
+load ../tool/say
+  find name-run
+  find say-done
+  find say-skip
+  find say-next
+  find say-facts
+  find finish
 
 # Store a credential for one sort. The value is read with echo off and goes
 # straight to the store, never through an argument or a file.
@@ -60,7 +67,10 @@ task bank
   mark async
   take sort, like text
   take over, like boolean
+  like number
 
+  call name-run
+    text <code>
   save bond
     call read-bond
       bind hold, text <>
@@ -79,13 +89,17 @@ task bank
   # say so and stop before the interactive paste path below.
   fork case, read kind
     case env
+      call say-skip
+        text <This machine uses the env store. Set ZONE_CODE (or ZONE_CODE_<TIER>) in the environment. Nothing to store here.>
       send back
-        call show-line
-          text <This machine uses the env store. Set ZONE_CODE (or ZONE_CODE_<TIER>) in the environment. Nothing to store here.>
+        call finish
+          text <Nothing to store>
     case prompt
+      call say-skip
+        text <This machine uses the prompt store. The code is asked for on each call. Nothing to store here.>
       send back
-        call show-line
-          text <This machine uses the prompt store. The code is asked for on each call. Nothing to store here.>
+        call finish
+          text <Nothing to store>
 
   # Replacing an existing credential is a real decision, so it is asked
   # unless the caller already said `--over`.
@@ -120,18 +134,24 @@ task bank
     bind spot, read spot
     bind body, read body
 
-  call show-line
+  call say-done
     call join-text
       make list
         text <Saved code for >
         read sort
         text <.>
+  send back
+    call finish
+      text <Saved>
 
 # Describe one sort's record. Never the value.
 task tell
   mark async
   take sort, like text
+  like number
 
+  call name-run
+    text <code>
   save bond
     call read-bond
       bind hold, text <>
@@ -140,9 +160,13 @@ task tell
       call is-none
         read bond
     hook hold
+      call say-next
+        text <info>
+        text <This machine is not bound>
+        text <zone bind --team \<team\>>
       send back
-        call show-line
-          text <Not bound. Run `zone bind` first.>
+        call finish
+          text <Not bound>
   save bond-in
     call unwrap
       read bond
@@ -163,22 +187,26 @@ task tell
       bind kind, read kind
       bind spot, read spot
 
-  call show-line
-    call join-text
-      make list
-        text <sort    >
-        read sort
-  call show-line
-    call join-text
-      make list
-        text <code    >
-        call yes-no
-          read yes
+  call say-facts
+    text <info>
+    read sort
+    make list
+      call join-text
+        make list
+          text <code >
+          call yes-no
+            read yes
+  send back
+    call finish
+      text <Described>
 
 # Every sort this machine knows about.
 task poll
   mark async
-  like list
+  like number
+
+  call name-run
+    text <code>
   save bond
     call read-bond
       bind hold, text <>
@@ -196,7 +224,8 @@ task poll
         call tell
           bind sort, read item/name
   send back
-    read out
+    call finish
+      text <Described>
 
 # Remove the local copy. The remote token stays live until someone revokes
 # it in the provider, and the message says so, because believing otherwise
@@ -204,7 +233,10 @@ task poll
 task shed
   mark async
   take sort, like text
+  like number
 
+  call name-run
+    text <code>
   save bond
     call read-bond
       bind hold, text <>
@@ -222,13 +254,17 @@ task shed
   # and nothing to confirm.
   fork case, read kind
     case env
+      call say-skip
+        text <This machine uses the env store. Nothing is stored locally to remove.>
       send back
-        call show-line
-          text <This machine uses the env store. Nothing is stored locally to remove.>
+        call finish
+          text <Nothing to remove>
     case prompt
+      call say-skip
+        text <This machine uses the prompt store. Nothing is stored locally to remove.>
       send back
-        call show-line
-          text <This machine uses the prompt store. Nothing is stored locally to remove.>
+        call finish
+          text <Nothing to remove>
 
   call sure
     wait true
@@ -243,9 +279,12 @@ task shed
     bind kind, read kind
     bind spot, read spot
 
-  call show-line
+  call say-done
     call join-text
       make list
         text <Tossed local >
         read sort
         text < code. Remote access is still active until it is revoked.>
+  send back
+    call finish
+      text <Tossed>

@@ -36,13 +36,21 @@ load @term/base/boolean
 
 load ../tool/base
   find join-text
-  find show-line
   find yes-no
+
+load ../tool/say
+  find name-run
+  find say-next
+  find say-facts
+  find finish
 
 task show
   mark async
   take sort, like text
+  like number
 
+  call name-run
+    text <show>
   save bond
     call read-bond
       bind hold, text <>
@@ -51,9 +59,13 @@ task show
       call is-none
         read bond
     hook hold
+      call say-next
+        text <info>
+        text <This machine is not bound>
+        text <zone bind --team \<team\>>
       send back
-        call show-line
-          text <Not bound. Run `zone bind` to configure this machine.>
+        call finish
+          text <Not bound>
   save bond-in
     call unwrap
       read bond
@@ -70,36 +82,45 @@ task show
       bind bond, read bond-in
       bind sort, read sort-in
 
-  call show-line
+  # one item, the binding's facts as its fields (output standard section 14)
+  save facts
+    make list
+      call join-text
+        make list
+          text <mind >
+          read bond-in/mind
+      call join-text
+        make list
+          text <host >
+          read bond-in/host
+      call join-text
+        make list
+          text <sort >
+          read sort-in
+      call join-text
+        make list
+          text <hold >
+          read bond-in/hold
+      call join-text
+        make list
+          text <save >
+          read kind
+      call join-text
+        make list
+          text <code >
+          call yes-no
+            call keep
+              bind kind, read kind
+              bind spot, read spot
+  call say-facts
+    text <info>
     call join-text
       make list
-        text <mind    >
+        text <bound as >
         read bond-in/mind
-  call show-line
-    call join-text
-      make list
-        text <host    >
+        text < on >
         read bond-in/host
-  call show-line
-    call join-text
-      make list
-        text <sort    >
-        read sort-in
-  call show-line
-    call join-text
-      make list
-        text <hold    >
-        read bond-in/hold
-  call show-line
-    call join-text
-      make list
-        text <save    >
-        read kind
-  call show-line
-    call join-text
-      make list
-        text <code    >
-        call yes-no
-          call keep
-            bind kind, read kind
-            bind spot, read spot
+    read facts
+  send back
+    call finish
+      text <Bound>

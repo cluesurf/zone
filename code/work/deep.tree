@@ -14,7 +14,7 @@ load @term/base/text
 load @term/base/list
   find list
   find push
-  find size
+  find length
 
 load ../base
   find spot
@@ -26,7 +26,7 @@ load ../config/zone
   find mine-zone
 
 load ../tool/base
-  find show-line
+  find show-data
   find equal
   find read-file
   find more
@@ -61,7 +61,7 @@ task deep
   fork test
     hook test
       call is-equal
-        call size
+        call length
           read decks
         code 0
     hook hold
@@ -87,7 +87,8 @@ task deep
       read root
     hook next
       take site, name one
-      call show-line
+      # data for shell completion, on stdout as it is, never an item
+      call show-data
         read one
   send back
     code 0

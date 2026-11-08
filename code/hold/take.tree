@@ -32,9 +32,9 @@ load ../tool/base
 # The declared names that the project did not supply. A `want` that is
 # absent is fine. A `need` that is absent is not.
 task miss-need
-  take have, like list
-  take want, like list
-  like list
+  take have, like list, like hold
+  take want, like list, like need
+  like list, like need
 
   save gone
     make list
@@ -85,9 +85,9 @@ task env-name
         text <_>
 
 task take-need
-  take have, like list
-  take want, like list
-  like list
+  take have, like list, like hold
+  take want, like list, like need
+  like list, like hold
 
   save kept
     make list

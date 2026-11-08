@@ -12,6 +12,8 @@ load ../base
   find pass
   find hold
   find need
+  find bank
+  find haul
 
 load @term/base/text
   find text
@@ -64,11 +66,11 @@ task read-hold-many
   mark async
   take kind, like text
   take body, like text
-  # The organization. The SDK takes it on every call, where the retired
-  # `bws` path derived it from the credential.
+  # The organization. Unused since the move to `bws` (decision 004), which
+  # derives it from the credential. Kept so no caller changes.
   take team, like text
-  take list, like list
-  like list
+  take list, like list, like text
+  like list, like haul
   fork case, read kind
     case bitwarden
       send back
@@ -85,7 +87,7 @@ task list-hold
   take kind, like text
   take body, like text
   take team, like text
-  like list
+  like list, like bank
   fork case, read kind
     case bitwarden
       send back

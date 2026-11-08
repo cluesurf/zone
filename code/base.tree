@@ -53,6 +53,31 @@ form hold
     like text
     fall text <>
 
+# One project at the provider, as `vault.projects` answers it: its name, and its
+# id, which is what every other call takes.
+form bank
+  link name, like text
+  link body, like text
+
+# One secret's name and note, as `vault.notes` answers: metadata, never a value.
+form hold-note
+  link name, like text
+  link note, like text
+
+# One stored copy of a name, as `vault.copies` answers: its id at the
+# provider, its note, and the name of the project it is filed in. A key is
+# not unique, so a writer picks copies by these, never by the key alone.
+form hold-copy
+  link body, like text
+  link note, like text
+  link bank, like text
+
+# One project's holds, as `vault.all` answers a read of several: the bind it was
+# asked for, and what it carries.
+form haul
+  link bind, like text
+  link hold, like list, like hold
+
 # A declared requirement from a repository manifest. Carries a name and
 # whether the command may run without it, and never a value.
 form need
@@ -75,7 +100,8 @@ form bond
   link hold, like text
   link save, like text
   link name, like text
-  link seat, like list
+  # each provider the machine is bound to: typed, where a bare `like list` held the gradual unknown (D1)
+  link seat, like list, like seat
 
 # One sort of a binding: development, staging, production.
 form sort

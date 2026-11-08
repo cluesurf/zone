@@ -139,7 +139,7 @@ task vet
         hook hold
           send back
             call show-line
-              text <  ....  no binding for this sort in .zone.tree>
+              text <No binding for this sort in .zone.tree>
       save claim-in
         call unwrap
           read deal

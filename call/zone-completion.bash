@@ -1,6 +1,6 @@
 # Shell completion for zone, for bash and zsh.
 #
-#   source /path/to/zone/bin/zone-completion.bash
+#   source /path/to/zone/call/zone-completion.bash
 #
 # Paths come from `zone deep`, which reads the declaration in force for the
 # current directory, so completion is always what this project actually

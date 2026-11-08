@@ -1,0 +1,313 @@
+
+# What zone prints, in term's own lines (decision 002, zone-0146).
+#
+# Every line a command says goes through `@term/call/item`, the printer term's
+# own commands print through: the opening `●` line with the folder and
+# `zone <mark>`, one item per thing that happened (`✓` done, `✗` failed, `●`
+# info, `▲` warning, `○` skipped), a `next` hint under an item, and the
+# closing line with the run's time, which sets the exit code. The human view
+# is on stderr. Data a person asked for (`zone list`, `zone walk`, the key
+# `zone lock mint` prints) is not an item: it is `show-data` in tool/base, on
+# stdout as it is.
+#
+# THE RUN OPENS ON ITS FIRST ITEM. A command names its verb first
+# (`name-run`), and the run opens when the command first says something, so
+# `zone load` with nothing to say prints nothing before the child it starts.
+# `finish` closes a run that is open and answers its exit code, 0 when none
+# was opened. `stop` says a failure, closes the run and exits, which is what
+# every refusal in zone does.
+#
+# ONLY THIS MODULE LOADS THE PRINTER. A port holds one printer state per
+# module that reaches it (term cli-in-term traps), so every zone module
+# reports through these tasks and never through `@term/call/item` itself.
+#
+# A message of several lines is the item's subject (its first line) and its
+# message lines (the rest, blank lines dropped). `@term/call/item`'s `item`
+# form has no message field yet, so `zone-item` builds the record natively:
+# the module spreads the record it is handed into the printer's event, and the
+# printer reads `message` from it.
+
+load @term/call/item
+  find item
+  find opening
+  find closing
+  find open-run
+  find report
+  find close-run
+
+load @term/base/text
+  find text
+
+load @term/base/boolean
+  find boolean
+
+# The tool and version on the opening line. The manifest's mark, which
+# `zone -v` answers from deck.tree: test/help.sh holds the two equal.
+host zone-tool, text <zone 0.2.2>
+
+# The run's verb, how many commands are inside it, and whether its opening
+# was printed: this process's. A command another calls (`zone load` fills an
+# empty cache through `zone read`'s own task) is inside the outer one: the
+# outer verb stays, and only the outermost `finish` closes the run.
+bind enter-run
+  take verb, like text
+  case node
+    text <(function (v) \{ var s = globalThis.__zoneRun || (globalThis.__zoneRun = \{ verb: "", open: false, depth: 0 \}); if (!s.depth) \{ s.verb = v \} s.depth = (s.depth || 0) + 1 \})($verb)>
+
+# one command done: whether it was the outermost
+bind leave-run
+  like boolean
+  case node
+    text <(function () \{ var s = globalThis.__zoneRun || (globalThis.__zoneRun = \{ verb: "", open: false, depth: 0 \}); s.depth = Math.max(0, (s.depth || 0) - 1); return s.depth === 0 \})()>
+
+bind run-verb
+  like text
+  case node
+    text <((globalThis.__zoneRun && globalThis.__zoneRun.verb) || "zone")>
+
+# the next `finish` is the outermost one
+bind outermost
+  case node
+    text <(function () \{ var s = globalThis.__zoneRun || (globalThis.__zoneRun = \{ verb: "", open: false, depth: 0 \}); s.depth = 1 \})()>
+
+bind is-run-open
+  like boolean
+  case node
+    text <!!(globalThis.__zoneRun && globalThis.__zoneRun.open)>
+
+bind set-run-open
+  take open, like boolean
+  case node
+    text <(function (o) \{ var s = globalThis.__zoneRun || (globalThis.__zoneRun = \{ verb: "", open: false \}); s.open = o \})($open)>
+
+# The folder the command runs in, `~` for home, as term's opening shows it.
+bind here-shown
+  like text
+  case node
+    text <(function () \{ var p = process.cwd(), h = require("node:os").homedir(); if (h && p === h) \{ return "~" \} if (h && p.startsWith(h + "/")) \{ return "~" + p.slice(h.length) \} return p \})()>
+
+# One item: the glyph by name, the text's first line as the subject and the
+# rest as message lines, a `next` hint when `next` is not empty. The verb is
+# left empty, so the printer gives the item the run's own.
+bind zone-item
+  take glyph, like text
+  take text, like text
+  take next, like text
+  like item
+  case node
+    text <(function (g, t, n) \{ var lines = String(t).split("\\n").map(function (l) \{ return l.replace(/\\s+$/, "") \}).filter(function (l) \{ return l.trim() !== "" \}); var first = lines.length ? lines.shift().trim() : ""; return \{ glyph: g, verb: "", subject: first, fields: n ? [\{ key: "next", value: n \}] : [], message: lines \} \})($glyph, $text, $next)>
+
+# One item with fields: each of `facts` is `key value`, split at its first
+# space, and printed as the item's field of that key.
+bind fact-item
+  take glyph, like text
+  take text, like text
+  take facts, like list, like text
+  like item
+  case node
+    text <(function (g, t, f) \{ var lines = String(t).split("\\n").filter(function (l) \{ return l.trim() !== "" \}); var first = lines.length ? lines.shift().trim() : ""; return \{ glyph: g, verb: "", subject: first, fields: f.map(function (x) \{ var s = String(x), at = s.indexOf(" "); return at === -1 ? \{ key: s, value: "" \} : \{ key: s.slice(0, at), value: s.slice(at + 1) \} \}), message: lines \} \})($glyph, $text, $facts)>
+
+# A measured item: done under its budget, a warning over it, with the time
+# and the budget as the printer's own facts.
+bind time-item
+  take text, like text
+  take took, like number
+  take cap, like number
+  like item
+  case node
+    text <(\{ glyph: $took \< $cap ? "done" : "warning", verb: "", subject: $text, fields: [], duration: $took, budget: $cap \})>
+
+bind is-blank
+  take text, like text
+  like boolean
+  case node
+    text <(String($text).trim() === "")>
+
+bind quit
+  take code, like number
+  case node
+    text <process.exit($code)>
+
+# The command's verb, before it says anything. Nothing prints yet.
+task name-run
+  take verb, like text
+
+  call enter-run
+    read verb
+
+# The opening, once.
+task open-zone
+  fork test
+    hook test
+      call is-run-open
+    hook miss
+      call set-run-open
+        code true
+      call open-run
+        make opening
+          bind verb
+            call run-verb
+          bind subject
+            call here-shown
+          bind tool, read zone-tool
+
+task say-item
+  take one, like item
+
+  call open-zone
+  call report
+    read one
+
+# One line, by glyph: <done>, <failed>, <info>, <warning> or <skipped>.
+task say
+  take glyph, like text
+  take text, like text
+
+  # a blank line was spacing in the old output, and the printer spaces itself
+  fork test
+    hook test
+      call is-blank
+        read text
+    hook miss
+      call say-item
+        call zone-item
+          read glyph
+          read text
+          text <>
+
+# One line with what to run next.
+task say-next
+  take glyph, like text
+  take text, like text
+  take next, like text
+
+  call say-item
+    call zone-item
+      read glyph
+      read text
+      read next
+
+# One line with fields, `key value` each.
+task say-facts
+  take glyph, like text
+  take text, like text
+  take facts, like list, like text
+
+  call say-item
+    call fact-item
+      read glyph
+      read text
+      read facts
+
+task say-done
+  take text, like text
+
+  call say
+    text <done>
+    read text
+
+task say-info
+  take text, like text
+
+  call say
+    text <info>
+    read text
+
+task say-warn
+  take text, like text
+
+  call say
+    text <warning>
+    read text
+
+task say-fail
+  take text, like text
+
+  call say
+    text <failed>
+    read text
+
+task say-skip
+  take text, like text
+
+  call say
+    text <skipped>
+    read text
+
+task say-time
+  take text, like text
+  take took, like number
+  take cap, like number
+
+  call say-item
+    call time-item
+      read text
+      read took
+      read cap
+
+# Close the run with its verdict and answer the exit code: 1 when an item
+# failed, else 0. With no run open, nothing prints and the answer is 0.
+task finish
+  take verdict, like text
+  like number
+
+  fork test
+    hook test
+      call leave-run
+    hook miss
+      send back, code 0
+  fork test
+    hook test
+      call is-run-open
+    hook miss
+      send back, code 0
+  call set-run-open
+    code false
+  send back
+    call close-run
+      make closing
+        bind verdict, read verdict
+        bind next, text <>
+        bind failure, text <>
+
+# The same, with what to run next on the closing.
+task finish-next
+  take verdict, like text
+  take next, like text
+  like number
+
+  fork test
+    hook test
+      call leave-run
+    hook miss
+      send back, code 0
+  fork test
+    hook test
+      call is-run-open
+    hook miss
+      send back, code 0
+  call set-run-open
+    code false
+  send back
+    call close-run
+      make closing
+        bind verdict, read verdict
+        bind next, read next
+        bind failure, text <>
+
+# A refusal: the failure as a ✗ item, the run closed, and the process ended
+# with its code (1). Never returns.
+task stop
+  take text, like text
+  like number
+
+  call say-fail
+    read text
+  # the process ends here, whichever command inside the run refused
+  call outermost
+  save code
+    call finish
+      text <Failed>
+  call quit
+    read code
+  send back, read code

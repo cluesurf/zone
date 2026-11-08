@@ -52,7 +52,9 @@ bind do-mine-tree
 # wrapper is what the rest of zone imports.
 task mine-tree
   take body, like text
-  like list
+  # the leaves the flattener makes: typed, where a bare `like list` held the gradual unknown and every field read off
+  # an entry was one (D1)
+  like list, like leaf
   send back
     call do-mine-tree
       read body
@@ -71,7 +73,7 @@ bind do-mine-note
 # Parse a note into leaves, or none.
 task mine-note
   take body, like text
-  like list
+  like list, like leaf
   send back
     call do-mine-note
       read body

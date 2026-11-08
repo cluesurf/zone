@@ -1,18 +1,21 @@
 
-# Bitwarden Secrets Manager, reached through the `bws` tool.
+# Bitwarden Secrets Manager, reached through ONE pinned `bws` (decision 004).
+#
+# Every bind below calls the runtime shim `hold/runtime/vault.ts`, which
+# fetches the pinned release once, checks it against the sha256 it carries,
+# and runs only that binary. Never a `bws` from the PATH.
 #
 # The bootstrap credential goes to `bws` in its environment, not on its
 # command line, because `--access-token` on a command line is readable by any
 # process that can list the process table. It lives in that child's
-# environment for the length of one lookup and is not inherited by anything
-# else.
+# environment for the length of one call and is not inherited by anything
+# else. The one argument that carries a secret is a written value, in
+# `zone save` alone: the exception to decision 001 that decision 004 records.
 #
-# `bws secret list` is asked for one project and returns every secret in it.
+# `secret list` is asked for one project and returns every secret in it.
 # Filtering to the declared names happens on this side, so a manifest that
 # asks for three names never carries the rest of the project into a command.
 
-# The Bitwarden SDK, reached through a runtime shim. `hold/runtime/vault.ts`.
-#
 # WITHOUT THIS DOCK THE SHIM IS NEVER PREPENDED. The `case node` templates
 # below call `vault.put` and friends, the bundle builds clean, and the first
 # command to reach one dies with `ReferenceError: vault is not defined`. The
@@ -23,6 +26,10 @@ dock load
 load ../base
   find pass
   find hold
+  find bank
+  find haul
+  find hold-note
+  find hold-copy
 
 load @term/base/text
   find text
@@ -35,11 +42,12 @@ load @term/base/list
 load @term/base/boolean
   find boolean
 
-# Whether the provider tool is installed.
+# Whether this machine can reach the provider: whether a `bws` is pinned
+# for its platform. Nothing is fetched or run.
 bind do-bitwarden-open
   like boolean
   case node
-    text <(function () \{ try \{ require("node:child_process").execFileSync("bws", ["--version"], \{ stdio: "ignore", timeout: 10000, killSignal: "SIGKILL" \}); return true \} catch (e) \{ return false \} \})()>
+    text <vault.now.open()>
 
 # Confirm the credential opens the project, without reading any values.
 # This is what `zone code show` and `zone test` use, so a check never pulls
@@ -49,7 +57,7 @@ bind do-bitwarden-good
   take bind, like text
   like boolean
   case node
-    text <(function () \{ try \{ require("node:child_process").execFileSync("bws", ["project", "get", $bind], \{ env: Object.assign(\{\}, process.env, \{ BWS_ACCESS_TOKEN: $body \}), stdio: "ignore", timeout: 20000, killSignal: "SIGKILL" \}); return true \} catch (e) \{ return false \} \})()>
+    text <vault.now.good($body, $bind)>
 
 # THE PROVIDER'S SPELLING DOES NOT MATTER.
 #
@@ -69,7 +77,7 @@ bind do-bitwarden-read
   take bind, like text
   like list
   case node
-    text <(function () \{ try \{ var out = require("node:child_process").execFileSync("bws", ["secret", "list", $bind, "--output", "json"], \{ encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], timeout: 20000, killSignal: "SIGKILL", env: Object.assign(\{\}, process.env, \{ BWS_ACCESS_TOKEN: $body \}) \}); return JSON.parse(out).map(function (s) \{ var k = String(s.key); var cut = k.indexOf(":"); if (cut \> 0) \{ k = k.slice(cut + 1) \} return \{ name: k.toLowerCase().split("_").join("-"), body: s.value, note: s.note || "" \} \}) \} catch (e) \{ if (e && e.code === "ENOENT") \{ process.stderr.write("The `bws` command is not installed, so no value can be read.\\n\\nTHE CREDENTIAL IS NOT THE PROBLEM. Nothing has been asked of the\\nprovider yet.\\n\\nThis looks for two clients and found neither:\\n\\n  @bitwarden/sdk-napi   the native module, preferred\\n  bws                   the command line tool\\n\\nOn alpine (musl) the SDK is not an option: it publishes binaries\\nfor linux-x64-GNU, darwin and win32 only. Install `bws`, which\\ndoes ship a musl build.\\n"); process.exit(1) \} var why = (e && (e.code === "ETIMEDOUT" || e.signal === "SIGKILL")) ? "the provider did not answer within 20 seconds" : String((e && e.stderr) || (e && e.message) || e).trim().split("\\n").filter(function (l) \{ return l.trim() \}).slice(0, 3).join("\\n  "); process.stderr.write("The provider refused.\\n\\n  " + why + "\\n\\n" + (/plan|limit|maximum|quota|upgrade/i.test(why) ? "That is a limit on the account, not a problem with the credential.\\n" : /timed out|did not answer/i.test(why) ? "Check the network.\\n" : "The credential may be wrong, expired or revoked. Check it with\\n`zone code show`, replace it with `zone code save`.\\n")); process.exit(1) \} \})()>
+    text <vault.now.read($body, $bind)>
 
 # Create a project. Named after the zone path, so what a person sees in the
 # provider is the address the declaration uses.
@@ -78,7 +86,7 @@ bind do-bitwarden-make
   take name, like text
   like text
   case node
-    text <(function () \{ try \{ var out = require("node:child_process").execFileSync("bws", ["project", "create", $name, "--output", "json"], \{ encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], timeout: 20000, killSignal: "SIGKILL", env: Object.assign(\{\}, process.env, \{ BWS_ACCESS_TOKEN: $body \}) \}); return JSON.parse(out).id \} catch (e) \{ if (e && e.code === "ENOENT") \{ process.stderr.write("The `bws` command is not installed, so no value can be read.\\n\\nTHE CREDENTIAL IS NOT THE PROBLEM. Nothing has been asked of the\\nprovider yet.\\n\\nThis looks for two clients and found neither:\\n\\n  @bitwarden/sdk-napi   the native module, preferred\\n  bws                   the command line tool\\n\\nOn alpine (musl) the SDK is not an option: it publishes binaries\\nfor linux-x64-GNU, darwin and win32 only. Install `bws`, which\\ndoes ship a musl build.\\n"); process.exit(1) \} var why = (e && (e.code === "ETIMEDOUT" || e.signal === "SIGKILL")) ? "the provider did not answer within 20 seconds" : String((e && e.stderr) || (e && e.message) || e).trim().split("\\n").filter(function (l) \{ return l.trim() \}).slice(0, 3).join("\\n  "); process.stderr.write("The provider refused.\\n\\n  " + why + "\\n\\n" + (/plan|limit|maximum|quota|upgrade/i.test(why) ? "That is a limit on the account, not a problem with the credential.\\n" : /timed out|did not answer/i.test(why) ? "Check the network.\\n" : "The credential may be wrong, expired or revoked. Check it with\\n`zone code show`, replace it with `zone code save`.\\n")); process.exit(1) \} \})()>
+    text <vault.now.make($body, $name)>
 
 # Several projects at once.
 #
@@ -93,8 +101,8 @@ bind do-bitwarden-make
 bind do-bitwarden-read-many
   take body, like text
   take team, like text
-  take list, like list
-  like list
+  take list, like list, like text
+  like list, like haul
   case node
     text <(async function () \{ var all = await vault.all($body, $team, $list); var want = $list; var by = \{\}; want.forEach(function (bind) \{ by[bind] = [] \}); var loose = []; all.forEach(function (one) \{ var row = \{ name: one.name, body: one.body, note: one.note \}; if (one.bind && by[one.bind]) \{ by[one.bind].push(row) \} else \{ loose.push(row) \} \}); return want.map(function (bind) \{ return \{ bind: bind, hold: by[bind].length ? by[bind] : loose \} \}) \})()>
 
@@ -103,19 +111,19 @@ task bitwarden-read-many
   mark async
   take body, like text
   take team, like text
-  take list, like list
-  like list
+  take list, like list, like text
+  like list, like haul
   send back
     call do-bitwarden-read-many
       bind body, read body
       bind team, read team
       bind list, read list
 
-# Every project the credential can see, through the SDK. `vault.projects`.
+# Every project the credential can see. `vault.projects`.
 bind do-bitwarden-projects
   take body, like text
   take team, like text
-  like list
+  like list, like bank
   case node
     text <vault.projects($body, $team)>
 
@@ -124,7 +132,7 @@ task bitwarden-list
   mark async
   take body, like text
   take team, like text
-  like list
+  like list, like bank
   send back
     call do-bitwarden-projects
       bind body, read body
@@ -167,10 +175,12 @@ task bitwarden-read
       bind body, read body
       bind bind, read bind
 
-# Write one secret, through the SDK rather than the command line.
+# Write one secret, through the pinned `bws`.
 #
-# THE VALUE IS A FUNCTION ARGUMENT. `bws secret create` takes it on argv,
-# where anything that can list processes reads it. This does not.
+# THE ONE CALL THAT PUTS A VALUE IN AN ARGUMENT. `bws` 2.1.0 takes a written
+# value no other way, so for about a second `ps` can read it. Decision 004
+# accepts that for `zone save` on the laptop alone, as an exception to
+# decision 001. `vault.put` keeps it to one argument and redacts every error.
 #
 # Returns `made` or `grew`, so the caller can say which happened.
 bind do-bitwarden-put
@@ -181,9 +191,21 @@ bind do-bitwarden-put
   take mind, like text
   take name, like text
   take code, like text
+  # the ids of the copies to update. Empty creates a new one
+  take ids, like list, like text
   like text
   case node
-    text <vault.put($body, $team, $bank, $mind, $name, $code)>
+    text <vault.put($body, $team, $bank, $mind, $name, $code, $ids)>
+
+# Every stored copy of one name: id, note and project name. No value.
+bind do-bitwarden-copies
+  mark async
+  take body, like text
+  take team, like text
+  take name, like text
+  like list, like hold-copy
+  case node
+    text <vault.copies($body, $team, $name)>
 
 # The note already stored against one name. Empty when there is none.
 #
@@ -204,7 +226,7 @@ bind do-bitwarden-notes
   mark async
   take body, like text
   take team, like text
-  like list
+  like list, like hold-note
   case node
     text <vault.notes($body, $team)>
 
@@ -219,26 +241,25 @@ bind do-bitwarden-mark
   case node
     text <vault.mark($body, $team, $name, $mind)>
 
-# Remove one secret. True if it was there.
+# Remove the copies named by id. How many went.
 bind do-bitwarden-drop
   mark async
   take body, like text
   take team, like text
-  take path, like text
-  take name, like text
-  like boolean
+  take ids, like list, like text
+  like number
   case node
-    text <vault.drop($body, $team, $path, $name)>
+    text <vault.drop($body, $team, $ids)>
 
-# Read one secret's value. Empty if it is not there.
+# Read one copy's value, by id. Empty if it is not there.
 bind do-bitwarden-one
   mark async
   take body, like text
   take team, like text
-  take name, like text
+  take id, like text
   like text
   case node
-    text <vault.one($body, $team, $name)>
+    text <vault.one($body, $team, $id)>
 
 # Exportable wrappers: a native `bind` is file-local.
 task bitwarden-put
@@ -249,6 +270,7 @@ task bitwarden-put
   take mind, like text
   take name, like text
   take code, like text
+  take ids, like list, like text
   like text
   send back
     call do-bitwarden-put
@@ -258,6 +280,20 @@ task bitwarden-put
       bind mind, read mind
       bind name, read name
       bind code, read code
+      bind ids, read ids
+      wait true
+
+task bitwarden-copies
+  mark async
+  take body, like text
+  take team, like text
+  take name, like text
+  like list, like hold-copy
+  send back
+    call do-bitwarden-copies
+      bind body, read body
+      bind team, read team
+      bind name, read name
       wait true
 
 task bitwarden-note
@@ -277,7 +313,7 @@ task bitwarden-notes
   mark async
   take body, like text
   take team, like text
-  like list
+  like list, like hold-note
   send back
     call do-bitwarden-notes
       bind body, read body
@@ -303,26 +339,24 @@ task bitwarden-drop
   mark async
   take body, like text
   take team, like text
-  take path, like text
-  take name, like text
-  like boolean
+  take ids, like list, like text
+  like number
   send back
     call do-bitwarden-drop
       bind body, read body
       bind team, read team
-      bind path, read path
-      bind name, read name
+      bind ids, read ids
       wait true
 
 task bitwarden-one
   mark async
   take body, like text
   take team, like text
-  take name, like text
+  take id, like text
   like text
   send back
     call do-bitwarden-one
       bind body, read body
       bind team, read team
-      bind name, read name
+      bind id, read id
       wait true

@@ -20,7 +20,7 @@ load @term/base/text
 load @term/base/list
   find list
   find push
-  find size
+  find length
 
 load @term/base/boolean
   find boolean

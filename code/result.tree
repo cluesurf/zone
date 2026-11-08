@@ -137,7 +137,8 @@ form result
 task catch
   take work, like task
   like result
-  mark unsafe
+  fork
+    mark unsafe
     save value
       call work
     send back

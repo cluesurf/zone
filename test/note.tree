@@ -13,7 +13,7 @@ load @term/base/text
 load @term/base/list
   find list
   find join
-  find size
+  find length
 
 load ../code/tool/note
   find note-zones

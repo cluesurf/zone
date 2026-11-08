@@ -13,7 +13,7 @@ load @term/base/text
 
 load @term/base/list
   find list
-  find size
+  find length
 
 load @term/base/boolean
   find boolean
@@ -28,63 +28,70 @@ load ../work/load
 load ../tool/base
   find join-text
   find join-line
-  find show-line
   find halt
   find here
   find have-file
+
+load ../tool/say
+  find name-run
+  find say-info
+  find say-facts
+  find finish
 
 task files
   mark async
   like number
 
+  call name-run
+    text <deck>
   save all
     call read-decks
 
   fork test
     hook test
       call is-equal
-        call size
+        call length
           read all
         code 0
     hook hold
       send back
         call halt-no-deck
 
-  call show-line
-    call join-text
+  call say-info
+    call join-line
       make list
-        call join-line
-          make list
-            text <Read from, nearest first, starting at:>
-            text <>
+        text <Read from, nearest first, starting at:>
         call here
-  call show-line
-    text <>
 
+  # one item per declaration, its cache as a field
   walk list, read all
     hook next
       take site, name one
-      call show-line
-        call join-text
-          make list
-            text <  >
-            read one
       save at-cache
         call spot-cache
           read one
+      save cache-line
+        call join-text
+          make list
+            text <cache none yet. `zone read` makes one.>
       fork test
         hook test
           call have-file
             read at-cache
         hook hold
-          call show-line
+          save cache-line
             call join-text
               make list
-                text <    cache  >
+                text <cache >
                 read at-cache
-        hook miss
-          call show-line
-            text <    cache  none yet. `zone read` makes one.>
+      save facts
+        make list
+          read cache-line
+      call say-facts
+        text <info>
+        read one
+        read facts
 
   send back
-    code 0
+    call finish
+      text <Listed>

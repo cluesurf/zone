@@ -23,14 +23,16 @@
 #   a comment edit does not make `zone test` refuse the cache
 #   no value is ever printed
 #
-# Headless. The fake SDK persists its writes to $ZONE_FAKE_STORE so a save
-# and a load, two processes, see one provider. No keychain, no network.
+# Headless. The fake bws (test/fake.sh) persists its writes to
+# $ZONE_FAKE_STORE so a save and a load, two processes, see one provider. No
+# keychain, no network.
 set -u
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ZONE="$(cd "$HERE/.." && pwd)"
-TERM_HOST="$ZONE/../term/deck/term/host/line.js"
-WORK="$(mktemp -d)"
+. "$HERE/term.sh"
+zone_term_find "$ZONE" || exit 1
+WORK="$(zone_work)"
 PROJ="$WORK/proj"
 SBOX="$WORK/home"
 mkdir -p "$PROJ" "$SBOX/.base/@term/zone"
@@ -81,19 +83,17 @@ sort moon
 save env
 EOF2
 
-export NODE_PATH="$ZONE/test/fixture/sdk/node_modules"
+. "$HERE/fake.sh"
+zone_fake "$ZONE" "$WORK" || { echo "could not set up the fake bws"; exit 1; }
 export HOME="$SBOX"
 export TERM_CACHE_HOME="$SBOX/.cache"
 export ZONE_SAVE=env
 export ZONE_CODE=fake-machine-token
-export ZONE_FAKE_LOG="$WORK/calls.log"
-export ZONE_FAKE_STORE="$WORK/store.json"
-: > "$ZONE_FAKE_LOG"
 
 (cd "$ZONE" && pnpm exec tsx test/make-key.ts "$WORK/key" >/dev/null 2>&1)
 export ZONE_LOCK="$(cat "$WORK/key")"
 
-zone(){ ( cd "$PROJ" && node "$TERM_HOST" boot "$ZONE/code/line/base.tree" -- "$@" 2>&1 | strip ); }
+zone(){ ( cd "$PROJ" && node "$TERM_HOST" boot "$ZONE_SRC/code/line/base.tree" -- "$@" 2>&1 | strip ); }
 calls(){ wc -l < "$ZONE_FAKE_LOG" | tr -d ' '; }
 # The child prints one variable JSON-encoded, so every byte is visible.
 seen(){ zone load "${2:-base}" -- node -e "process.stdout.write(JSON.stringify(process.env.$1 ?? null))" 2>/dev/null | tail -1; }
@@ -156,7 +156,10 @@ echo
 echo "=== a name declared under a nested zone is filed under that zone ==="
 out="$(printf 'nested-client\n' | zone save --name google-client-id --commit)"; echo "$out"
 echo "$out" | grep -q 'google-client-id grew at base/word.surf' && ok "filed at base/word.surf" || no "filed elsewhere: $out"
-grep -q 'list zone, <base/word.surf>' "$ZONE_FAKE_STORE" && ok "the note names the nested zone" || no "the note does not name base/word.surf"
+# AN UPDATE KEEPS THE COPY'S OWN NOTE (it may name a second declaration),
+# so the fixture's retired `zone: base/word.surf` shape survives a save.
+# `zone wash` is what rewrites the shape.
+grep -qE 'list zone, <base/word.surf>|zone: base/word.surf' "$ZONE_FAKE_STORE" && ok "the note names the nested zone" || no "the note does not name base/word.surf"
 got="$(seen GOOGLE_CLIENT_ID word.surf)"
 [ "$got" = '"nested-client"' ] && ok "load word.surf sees it" || no "load word.surf saw $got"
 
@@ -169,7 +172,8 @@ grep -q '"key": "volume-size"' "$ZONE_FAKE_STORE" && no "a second secret under t
 got="$(seen VOLUME_SIZE word.surf/tf)"
 [ "$got" = '"1000"' ] && ok "load word.surf/tf reads it back as VOLUME_SIZE" || no "load word.surf/tf saw $got"
 out="$(zone save --name volume-size)"
-echo "$out" | grep -q 'stored as tf-var-volume-size' && ok "the report names the key too" || no "the report does not name the key: $out"
+# the printer wraps an item past 80 columns, its continuation two cells in, so the words are read joined
+echo "$out" | tr '\n' ' ' | grep -q 'stored as  *tf-var-volume-size' && ok "the report names the key too" || no "the report does not name the key: $out"
 
 echo
 echo "=== a bind edit reaches the next load, with no provider and no refetch ==="
@@ -183,13 +187,13 @@ echo "$out" | grep -q '"bob"' && ok "the edited bind is what the child gets" || 
 [ "$after" = "$before" ] && ok "the provider was not called" || no "a bind edit called the provider"
 echo "$out" | grep -qi 'stale\|declaration' && no "a bind edit produced a warning: $out" || ok "no warning about the declaration"
 out="$(zone test)"; echo "$out" | grep -i 'built against'
-echo "$out" | grep -q 'ok.*built against this declaration' && ok "zone test still accepts the cache" || no "zone test refuses the cache after a bind edit"
+echo "$out" | grep -qE '^(✓|v) test .*built against this declaration' && ok "zone test still accepts the cache" || no "zone test refuses the cache after a bind edit"
 
 echo
 echo "=== a comment edit does not invalidate the cache either ==="
 printf '\n# a comment somebody added\n' >> "$PROJ/zone.tree"
 out="$(zone test)"
-echo "$out" | grep -q 'ok.*built against this declaration' && ok "zone test accepts the cache after a comment" || no "a comment invalidated the cache"
+echo "$out" | grep -qE '^(✓|v) test .*built against this declaration' && ok "zone test accepts the cache after a comment" || no "a comment invalidated the cache"
 before=$(calls)
 out="$(zone read)"
 after=$(calls)
@@ -199,7 +203,7 @@ echo
 echo "=== and a NEW need does invalidate it ==="
 printf '\nneed just-added\n' >> "$PROJ/zone.tree"
 out="$(zone test)"
-echo "$out" | grep -q 'ok.*built against this declaration' && no "a new need did not invalidate the cache" || ok "a new need invalidates the cache"
+echo "$out" | grep -qE '^(✓|v) test .*built against this declaration' && no "a new need did not invalidate the cache" || ok "a new need invalidates the cache"
 
 echo
 echo "=== no value is ever printed ==="

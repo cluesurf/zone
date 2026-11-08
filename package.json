@@ -1,6 +1,15 @@
 {
   "name": "@term/zone",
+  "version": "0.2.2",
   "private": true,
-  "description": "Not an npm package. Zone ships through the Term registry and declares itself in deck.tree. This file exists for one reason: `type: module`, so its TypeScript tests and runtime shims load as ESM. Inside the Term tree they inherited that from the Term package; at deck/zone nothing above them says it.",
-  "type": "module"
+  "description": "Environment and secrets: bind a machine, keep its credential in the system keystore, run a command with a zone's values in its environment. Published to the Term registry only (term save @term/zone -g), never npm.",
+  "license": "Apache-2.0",
+  "author": "Lance Pollard <lp@elk.fm>",
+  "type": "module",
+  "scripts": {
+    "test": "bash test/all.sh"
+  },
+  "engines": {
+    "node": ">=22"
+  }
 }

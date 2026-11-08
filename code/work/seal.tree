@@ -50,9 +50,18 @@ load ../seal/keep
 load ../tool/base
   find join-text
   find join-line
-  find show-line
+  find show-data
   find halt
   find equal
+
+load ../tool/say
+  find name-run
+  find say-done
+  find say-fail
+  find say-info
+  find say-next
+  find finish
+  find finish-next
 
 # Every seal command needs the binding, so the read and its refusal live here.
 task seal-bond
@@ -78,6 +87,9 @@ task seal-bond
 task mint
   mark async
   like number
+
+  call name-run
+    text <lock>
   save bond
     call seal-bond
   save kind
@@ -93,22 +105,24 @@ task mint
         read kind
         text <env>
     hook hold
-      call show-line
+      call say-next
+        text <failed>
         call join-line
           make list
             text <This machine uses the env store, which zone cannot write to.>
-            text <>
             text <Set ZONE_LOCK yourself, to a tone-packed 32-byte key, from whatever>
             text <secret store the platform gives you. Nothing was made or stored here.>
+        text <zone lock mint>
       send back
-        code 1
+        call finish
+          text <Nothing was made>
 
   call make-seal
     bind kind, read kind
     bind spot
       call seal-seat
         read bond
-  call show-line
+  call say-done
     call join-text
       make list
         text <A master key is stored in the >
@@ -116,16 +130,20 @@ task mint
         call join-line
           make list
             text < store for this machine.>
-            text <>
             text <Anything already in the cache was sealed with the old key and cannot be>
-            text <opened now. Run `zone read` to fill it again.>
+            text <opened now.>
   send back
-    code 0
+    call finish-next
+      text <Made>
+      text <zone read --fresh>
 
 # Says whether a key is there. Never what it is, and there is no flag for it.
 task tell-seal
   mark async
   like number
+
+  call name-run
+    text <lock>
   save bond
     call seal-bond
   save kind
@@ -140,23 +158,29 @@ task tell-seal
     hook test
       read got
     hook hold
-      call show-line
+      call say-info
         call join-text
           make list
-            text <  seal  yes, in the >
+            text <seal yes, in the >
             read kind
             text < store>
-    hook miss
-      call show-line
-        call join-text
-          make list
-            text <  seal  no. Run `zone lock make` to make one.>
+      send back
+        call finish
+          text <Has a key>
+  call say-next
+    text <info>
+    text <seal no>
+    text <zone lock make>
   send back
-    code 0
+    call finish
+      text <No key>
 
 task shed-seal
   mark async
   like number
+
+  call name-run
+    text <lock>
   save bond
     call seal-bond
   call toss-seal
@@ -165,10 +189,12 @@ task shed-seal
     bind spot
       call seal-seat
         read bond
-  call show-line
+  call say-done
     text <The master key is gone from this machine. The cache it opened is now unreadable, which costs nothing: the values are still at the provider. `zone lock make` then `zone read` restores it.>
   send back
-    code 0
+    call finish-next
+      text <Removed>
+      text <zone lock make>
 
 # `zone lock mint` — print a fresh key, storing nothing.
 #
@@ -189,9 +215,10 @@ task shed-seal
 task mint-seal
   mark async
   like number
+  # the key is data, on stdout alone, so it can be piped into a secret store
   save key
     call make-key
-  call show-line
+  call show-data
     call tone-pack
       read key
   send back

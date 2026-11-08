@@ -1,15 +1,294 @@
-#!/usr/bin/env bash
-# Fake Bitwarden Secrets Manager for the zone e2e. Returns canned
-# secrets so the whole pipeline runs without a real Bitwarden account.
-case "$1 $2" in
-  "--version"*) echo "bws 1.0.0-fake"; exit 0 ;;
-  "project get") exit 0 ;;
-  "secret list")
-    cat <<'JSON'
-[{"key":"openai-api-key","value":"sk-fake-123"},
- {"key":"database-url","value":"postgres://fake/db"},
- {"key":"sentry-dsn","value":"https://fake@sentry"}]
-JSON
-    exit 0 ;;
-esac
-echo "fake bws: unhandled $*" >&2; exit 1
+#!/usr/bin/env node
+// A fake `bws` 2.1.0, standing in for Bitwarden Secrets Manager in every
+// zone test. No network, no account, no real secret.
+//
+// It answers every verb zone calls (decision 004, the zone-0167 table):
+//
+//   --version
+//   project list | get -- <id> | create -- <name>
+//   secret list [-- <project id>] | get -- <id> | delete -- <ids...>
+//   secret create [--note=<n>] -- <key> <value> <project id>
+//   secret edit [--key=] [--value=] [--note=] [--project-id=] -- <id>
+//
+// STATE LIVES BESIDE THE SCRIPT, never in an environment variable, because
+// zone hands `bws` a short list of variables and nothing else: anything the
+// test exported would never arrive. A test copies this file into a temp
+// folder and reads these back:
+//
+//   store.json   the secrets. Absent, the fake serves FIXTURE below, and the
+//                first write creates it. Every zone command is its own
+//                process, so a save and a load see one provider only
+//                because the store is a file.
+//   calls.log    one line per call, WITH NO VALUE in it. Tests grep this to
+//                prove a value was never printed and to count calls.
+//   argv.jsonl   every argv exactly as received, and the names of the
+//                environment variables it arrived with. It holds values,
+//                so tests read it to assert the exact arguments and never
+//                grep it for a leak.
+//   fail.json    optional: { "times": n, "stderr": "...", "code": 1 }, the
+//                next n calls fail that way. How a rate limit is simulated.
+//
+// It is STRICT where the real one is: a project id it does not hold is
+// refused the way clap refuses one, `--output json` must be present, and a
+// positional before `--` is refused, so a zone that stops following the
+// argument rules fails here instead of at the provider.
+const fs = require('node:fs')
+const path = require('node:path')
+
+const HERE = __dirname
+const at = name => path.join(HERE, name)
+const argv = process.argv.slice(2)
+
+fs.appendFileSync(
+  at('argv.jsonl'),
+  JSON.stringify({ argv, env: Object.keys(process.env).sort() }) + '\n',
+)
+
+const log = line => fs.appendFileSync(at('calls.log'), line + '\n')
+const die = (code, text) => {
+  process.stderr.write(text + '\n')
+  process.exit(code)
+}
+
+if (argv[0] === '--version') {
+  log('version')
+  process.stdout.write('bws 2.1.0-fake\n')
+  process.exit(0)
+}
+
+// A simulated failure, counted down.
+if (fs.existsSync(at('fail.json'))) {
+  const fail = JSON.parse(fs.readFileSync(at('fail.json'), 'utf8'))
+
+  if (fail.times > 0) {
+    fail.times -= 1
+    fs.writeFileSync(at('fail.json'), JSON.stringify(fail))
+    log(`failed ${argv[0]} ${argv[1]}`)
+    die(fail.code ?? 1, fail.stderr ?? 'Error: 503 Service Unavailable')
+  }
+}
+
+const token = process.env.BWS_ACCESS_TOKEN
+
+if (!token) {
+  die(1, 'Error: Missing access token')
+}
+
+if (token === 'bad') {
+  log(`refused ${argv[0]} ${argv[1]}`)
+  die(1, 'Error: Received error message from server: [401 Unauthorized] {"error":"invalid_client"}')
+}
+
+const PROJECTS = [
+  { id: 'p-base', name: 'base' },
+  { id: 'p-word', name: 'base/word.surf' },
+  { id: 'p-star', name: 'base/word.surf/star' },
+  { id: 'p-talk', name: 'cluesurf-talk-development' },
+]
+
+const FIXTURE = [
+  { id: 's-1', key: 'database-url', value: 'from-base', note: 'zone: base', projectId: 'p-base' },
+  { id: 's-2', key: 'google-client-id', value: 'from-wordsurf', note: 'zone: base/word.surf', projectId: 'p-word' },
+  { id: 's-3', key: 'sentry-dsn', value: 'from-star', note: 'zone: base/word.surf/star', projectId: 'p-star' },
+]
+
+const readStore = () =>
+  fs.existsSync(at('store.json'))
+    ? JSON.parse(fs.readFileSync(at('store.json'), 'utf8'))
+    : FIXTURE.map(one => ({ ...one }))
+
+const writeStore = all =>
+  fs.writeFileSync(at('store.json'), JSON.stringify(all, null, 2) + '\n')
+
+const readProjects = () =>
+  fs.existsSync(at('projects.json'))
+    ? JSON.parse(fs.readFileSync(at('projects.json'), 'utf8'))
+    : PROJECTS.map(one => ({ ...one }))
+
+// Options before `--`, positionals after it. The two command words come
+// first, as they do for clap.
+const [noun, verb, ...rest] = argv
+const options = {}
+const positionals = []
+let past = false
+
+for (let n = 0; n < rest.length; n += 1) {
+  const one = rest[n]
+
+  if (past) {
+    positionals.push(one)
+  } else if (one === '--') {
+    past = true
+  } else if (one.startsWith('--')) {
+    const cut = one.indexOf('=')
+
+    if (cut > 0) {
+      options[one.slice(2, cut)] = one.slice(cut + 1)
+    } else {
+      options[one.slice(2)] = rest[n + 1]
+      n += 1
+    }
+  } else {
+    die(2, `fake bws: the positional ${JSON.stringify(one)} came before --`)
+  }
+}
+
+if (options.output !== 'json') {
+  die(2, 'fake bws: zone must pass --output json')
+}
+
+const out = value => {
+  process.stdout.write(JSON.stringify(value, null, 2) + '\n')
+  process.exit(0)
+}
+
+const projects = readProjects()
+const projectOf = (id, label) => {
+  const one = projects.find(p => p.id === id)
+
+  if (!one) {
+    die(2, `error: invalid value '${id}' for '${label}': no such project in the fake`)
+  }
+
+  return one
+}
+
+const full = one => ({
+  object: 'secret',
+  id: one.id,
+  organizationId: 'org-fake',
+  projectId: one.projectId ?? null,
+  key: one.key,
+  value: one.value,
+  note: one.note ?? '',
+  creationDate: '2026-11-07T00:00:00Z',
+  revisionDate: '2026-11-07T00:00:00Z',
+})
+
+const held = readStore()
+
+switch (`${noun} ${verb}`) {
+  case 'project list':
+    log('project list')
+    out(projects.map(p => ({ object: 'project', id: p.id, name: p.name })))
+    break
+
+  case 'project get': {
+    const one = projectOf(positionals[0], '<PROJECT_ID>')
+    log(`project get ${one.id}`)
+    out({ object: 'project', id: one.id, name: one.name })
+    break
+  }
+
+  case 'project create': {
+    const name = positionals[0]
+    const made = { id: `p-${projects.length + 1}`, name }
+    projects.push(made)
+    fs.writeFileSync(at('projects.json'), JSON.stringify(projects, null, 2) + '\n')
+    log(`project create ${name}`)
+    out({ object: 'project', ...made })
+    break
+  }
+
+  case 'secret list': {
+    const project = positionals[0]
+
+    if (project !== undefined) {
+      projectOf(project, '[PROJECT_ID]')
+    }
+
+    const rows = project === undefined ? held : held.filter(s => s.projectId === project)
+    log(`secret list ${project ?? 'all'} ${rows.map(s => s.id).join(',')}`)
+    out(rows.map(full))
+    break
+  }
+
+  case 'secret get': {
+    const one = held.find(s => s.id === positionals[0])
+    log(`secret get ${positionals[0]}`)
+
+    if (!one) {
+      die(1, 'Error: Received error message from server: [404 Not Found] {"message":"Resource not found."}')
+    }
+
+    out(full(one))
+    break
+  }
+
+  case 'secret create': {
+    if (positionals.length !== 3) {
+      die(2, `fake bws: secret create takes <KEY> <VALUE> <PROJECT_ID>, got ${positionals.length}`)
+    }
+
+    const [key, value, project] = positionals
+    projectOf(project, '<PROJECT_ID>')
+
+    // How clap answers a bad argument: it ECHOES the value. Zone must redact
+    // it before anything prints.
+    if (key === 'echo-the-value') {
+      die(2, `error: invalid value '${value}' for '<VALUE>': the fake echoes it`)
+    }
+
+    let serial = held.length + 1
+
+    while (held.some(s => s.id === `s-${serial}`)) {
+      serial += 1
+    }
+
+    const made = {
+      id: `s-${serial}`,
+      key,
+      value,
+      note: options.note ?? '',
+      projectId: project,
+    }
+    held.push(made)
+    writeStore(held)
+    log(`secret create ${key} in ${project}`)
+    out(full(made))
+    break
+  }
+
+  case 'secret edit': {
+    const id = positionals[0]
+    const index = held.findIndex(s => s.id === id)
+
+    if (index < 0) {
+      die(1, 'Error: Received error message from server: [404 Not Found] {"message":"Resource not found."}')
+    }
+
+    if (options['project-id'] !== undefined) {
+      projectOf(options['project-id'], '--project-id <PROJECT_ID>')
+    }
+
+    const was = held[index]
+
+    if (options.key === 'echo-the-value') {
+      die(2, `error: invalid value '${options.value}' for '--value <VALUE>': the fake echoes it`)
+    }
+
+    // Like the real one: a field not passed keeps what it held.
+    held[index] = {
+      id,
+      key: options.key ?? was.key,
+      value: options.value ?? was.value,
+      note: options.note ?? was.note,
+      projectId: options['project-id'] ?? was.projectId,
+    }
+    writeStore(held)
+    log(`secret update ${held[index].key} in ${held[index].projectId}`)
+    out(full(held[index]))
+    break
+  }
+
+  case 'secret delete': {
+    const gone = held.filter(s => positionals.includes(s.id))
+    writeStore(held.filter(s => !positionals.includes(s.id)))
+    log(`secret delete ${positionals.join(',')}`)
+    out({ data: gone.map(s => ({ id: s.id, error: null })) })
+    break
+  }
+
+  default:
+    die(2, `fake bws: unhandled ${argv.join(' ')}`)
+}

@@ -8,7 +8,7 @@
 #
 # THE NOTE IS A `host` DATA DOCUMENT, and it is read by the COMPILER:
 #
-#   list zone, <cluesurf>, <mesh>
+#   list zone, <acme>, <shop>
 #
 # One field. A list, because one stored value can belong to several
 # zones and storing it twice is the drift this system exists to end.
@@ -24,8 +24,8 @@
 # written. `mine-tree` is the compiler's own parser, bundled by the
 # mill shim, and it is what reads `zone.tree` and the cache too.
 #
-# IT IS NOT YAML AND NEVER WAS. `zone: cluesurf, mesh` looks like YAML
-# and parses in YAML as the single string "cluesurf, mesh": the comma
+# IT IS NOT YAML AND NEVER WAS. `zone: acme, shop` looks like YAML
+# and parses in YAML as the single string "acme, shop": the comma
 # list was never YAML list syntax, so a real YAML parser would have
 # bought a field split and left the comma to be hand-split anyway. The
 # `host` dialect has a list.
@@ -41,7 +41,7 @@ load @term/base/text
 load @term/base/list
   find list
   find push
-  find size
+  find length
 
 load @term/base/boolean
   find boolean
@@ -107,7 +107,7 @@ task note-zones
   fork test
     hook test
       call is-above
-        call size
+        call length
           read out
         code 0
     hook hold
@@ -173,7 +173,7 @@ task note-make
 
 # A note with one zone ADDED to whatever it already named.
 #
-# NEVER REPLACED. `list zone, <cluesurf>, <mesh>` means one stored value
+# NEVER REPLACED. `list zone, <acme>, <shop>` means one stored value
 # two declarations both find, which is what `zone share` writes.
 # Rewriting that to the single zone being filed under drops the other,
 # and every name shared that way reads as missing on the next
@@ -281,7 +281,7 @@ bind note-lines
 #   list zone, <a>, <b>   the current zone line
 #   zone: a, b            the retired zone line
 #   env: ARCJET_KEY       retired, written by the loader, read by nothing
-#   from: mesh/.env       retired, written by the loader, read by nothing
+#   from: shop/.env       retired, written by the loader, read by nothing
 #
 # `env` and `from` belong here because DROPPING THEM IS THE POINT. A
 # first version counted them as a person's writing, so `zone wash`

@@ -12,8 +12,9 @@ set -u
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ZONE="$(cd "$HERE/.." && pwd)"
-TERM_HOST="$ZONE/../term/deck/term/host/line.js"
-WORK="$(mktemp -d)"
+. "$HERE/term.sh"
+zone_term_find "$ZONE" || exit 1
+WORK="$(zone_work)"
 PROJ="$WORK/proj"
 SBOX="$WORK/home"
 mkdir -p "$PROJ" "$SBOX/.base/@term/zone"
@@ -48,22 +49,21 @@ sort moon
 save env
 EOF
 
-# THE FAKE IS THE SDK NOW, not a `bws` on PATH. Reading moved off the
-# command line tool, so a fake bws would sit there never being called while
-# every assertion failed. `NODE_PATH` is how the shim's `require` finds it.
-export NODE_PATH="$ZONE/test/fixture/sdk/node_modules"
+# THE FAKE IS THE PINNED `bws`'s stand-in (test/fake.sh), reached through a
+# copy of the package whose pin is the fake's. Never a `bws` on PATH: zone
+# runs none.
+. "$HERE/fake.sh"
+zone_fake "$ZONE" "$WORK" || { echo "could not set up the fake bws"; exit 1; }
 export HOME="$SBOX"
 export TERM_CACHE_HOME="$SBOX/.cache"
 export ZONE_SAVE=env
 export ZONE_CODE=fake-machine-token
-export ZONE_FAKE_LOG="$WORK/calls.log"
-: > "$ZONE_FAKE_LOG"
 
 # A master key for the cache, in the headless store.
 (cd "$ZONE" && pnpm exec tsx test/make-key.ts "$WORK/key" >/dev/null 2>&1)
 export ZONE_LOCK="$(cat "$WORK/key")"
 
-zone(){ ( cd "$PROJ" && node "$TERM_HOST" boot "$ZONE/code/line/base.tree" -- "$@" 2>&1 | strip ); }
+zone(){ ( cd "$PROJ" && node "$TERM_HOST" boot "$ZONE_SRC/code/line/base.tree" -- "$@" 2>&1 | strip ); }
 calls(){ wc -l < "$ZONE_FAKE_LOG" | tr -d ' '; }
 
 echo "=== read: the first one fetches ==="
@@ -135,24 +135,22 @@ EOF
 : > "$ZONE_FAKE_LOG"
 # COUNTED BY VALUES FETCHED, NOT BY CALLS.
 #
-# Reading goes through the SDK now, which lists the organization once and
-# then asks for values by id. So the number of CALLS is the same whether one
-# zone was named or all of them, and counting calls would say isolation was
-# lost when it was not. What matters is which values crossed the wire, and
-# `secret get <ids>` names exactly those.
+# What matters is which values crossed the wire. The fake logs every
+# `secret list -- <project>` with the ids it returned, so the ids after
+# `secret list` are exactly the values this process held.
 zone read --fresh >/dev/null 2>&1
-whole=$(grep -o "secret get .*" "$ZONE_FAKE_LOG" | tr ',' '\n' | grep -c "s-")
+whole=$(grep "^secret list" "$ZONE_FAKE_LOG" | cut -d' ' -f4 | tr ',' '\n' | grep -c "s-")
 
 : > "$ZONE_FAKE_LOG"
 zone read word.surf --fresh >/dev/null 2>&1
-narrow=$(grep -o "secret get .*" "$ZONE_FAKE_LOG" | tr ',' '\n' | grep -c "s-")
+narrow=$(grep "^secret list" "$ZONE_FAKE_LOG" | cut -d' ' -f4 | tr ',' '\n' | grep -c "s-")
 
 [ "$whole" -gt "$narrow" ] && ok "a named path fetches fewer values ($narrow vs $whole)" \
                            || no "naming a path fetched $narrow values, same as the whole tree ($whole)"
 grep -q "s-1" "$ZONE_FAKE_LOG" && ok "it still fetches the zones it inherits from" \
                                 || no "it skipped an ancestor, so inherited names would be missing"
-grep -q "word.surf/star" "$ZONE_FAKE_LOG" && no "it fetched a zone BELOW the one asked for" \
-                                          || ok "it does not fetch below the named zone"
+grep -qE "secret list (p-star|all)" "$ZONE_FAKE_LOG" && no "it fetched a zone BELOW the one asked for" \
+                                                     || ok "it does not fetch below the named zone"
 
 echo
 echo "=== load with no cache at all: fetches once, loudly, and runs ==="

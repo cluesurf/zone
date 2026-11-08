@@ -15,6 +15,25 @@
 <br/>
 <br/>
 
+## Installation
+
+```bash
+term save @term/zone -g
+```
+
+It installs the `zone` command from the Term registry, into
+`~/.base/@term/code/call`, which a Term install already puts on the PATH.
+It needs Term 2.10 or newer (https://term.surf). `term toss @term/zone -g`
+removes it, and `term save @term/zone -g` again updates it.
+
+Zone comes only from the Term registry. The old npm package
+`@cluesurf/zone` is not updated any more.
+
+Zone talks to Bitwarden through one pinned release of Bitwarden's `bws`
+command line tool, which it fetches once into `~/.base/@term/zone/bws/`
+and checks against a sha256 it carries. It never runs a `bws` from the
+PATH.
+
 ## Overview
 
 `zone` binds a machine, keeps its bootstrap credential in the operating
@@ -30,23 +49,23 @@ zone load example -- npm run dev
 ## Commands
 
 ```text
-zone bind      configure this machine: who you are, where secrets live
-zone call      run a command with secrets in its environment
+zone bind      configure this machine and its provider
+zone call      run a command with a sort's secrets
 zone code      manage this machine's bootstrap credentials
-zone load      run a command with a zone's values in its environment
-zone list      the names a path resolves to, never their values
-zone save      save the declaration to the provider. Never deletes
+zone load      run a command with a zone's values
+zone list      the names a zone resolves to, never values
+zone save      write the declaration to the provider
 zone wash      rewrite stored notes into the current shape
-zone read      fetch from the provider and fill the local cache
-zone move      values, to a platform that keeps its own copy
-zone hook      put one value on the clipboard, without printing it
-zone scan      what is wrong across the tree. Needs no provider
-zone walk      every zone path, one per line, for shell completion
-zone deck      which declarations are in force here, and their caches
-zone lock      the master key that opens this machine's local cache
+zone read      fetch values and fill the local cache
+zone move      send values to a platform's own store
+zone hook      put one value on the clipboard, unprinted
+zone scan      what is wrong across the tree, offline
+zone walk      every zone path, for shell completion
+zone deck      the declarations in force here, and caches
+zone lock      the master key of this machine's cache
 zone show      what this machine is bound to
-zone test      check the whole setup without revealing anything
-zone toss      unbind this machine and remove every stored code
+zone test      check the setup without revealing anything
+zone toss      unbind this machine, remove stored codes
 ```
 
 `zone <command> --help` describes each one.
@@ -142,34 +161,34 @@ child's environment.
 ## Tests
 
 ```bash
-pnpm zone:test
+bash test/all.sh
 ```
 
-From the repository root. It builds the package with `term make`, runs
-the `.tree` suites under `test/` through `term test`, the TypeScript
-suites for sealing, the cache and the provider SDK, and the shell
-harnesses for `fresh`, `save`, `load`, `help` and the end-to-end run
-against a fake provider, which touches no keychain.
+From this folder, with Term installed (https://term.surf). It first
+checks that nothing in the package reaches outside it (`test/alone.mjs`),
+then builds the package with the Term release `deck.tree` asks for
+(`need @term/code, mark <2.10.x>`), runs the `.tree` suites under `test/`
+through `term test`, the TypeScript suites for sealing, the cache, the
+provider calls and the pinned `bws` fetch, and the shell harnesses for
+`fresh`, `save`, `load`, `help` and the end-to-end run. Every provider call
+goes to a fake `bws` (`test/fixture/bin/bws`), reached through a copy of
+the package whose pin is the fake's (`test/fake.sh`), so nothing touches a
+keychain, the network or Bitwarden. The TypeScript suites run under `tsx`, which must be on PATH.
 
-## Running it
+## Working on zone
 
-`bin/zone` runs the source through the Term CLI in this repository when
-one is beside it, and otherwise the built console in `host/line/`, which
-runs with `node` alone:
+The `zone` on the PATH is the installed release. To run a clone's source
+instead, call `call/zone` from the clone. It boots the source with the
+installed `term`, at the release `deck.tree` asks for, and otherwise runs
+the built console in `host/line/`, which runs with `node` alone:
 
 ```bash
 term boot code/line/base.tree --out host/line
+call/zone --version
 ```
 
-Link it once to type `zone` from anywhere:
-
-```bash
-ln -s "$PWD/bin/zone" ~/.local/bin/zone
-```
-
-## Design
-
-`note/library/zone/readme.md`.
+A release is published from a clean clone with `term host`, at an even
+patch number.
 
 ## License
 

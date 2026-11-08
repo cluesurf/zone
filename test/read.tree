@@ -13,7 +13,7 @@ load @term/base/list
   find list
   find push
   find join
-  find size
+  find length
 
 load ../code/base
   find leaf
@@ -38,7 +38,7 @@ task show-leaf
   fork test
     hook test
       call more
-        call size
+        call length
           read one/term
         code 0
     hook hold
@@ -72,7 +72,7 @@ task show-leaf
   fork test
     hook test
       call more
-        call size
+        call length
           read one/leaf
         code 0
     hook hold

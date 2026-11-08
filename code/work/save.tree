@@ -26,7 +26,7 @@ load @term/base/text
 load @term/base/list
   find list
   find push
-  find size
+  find length
 
 load @term/base/boolean
   find boolean
@@ -39,6 +39,7 @@ load @term/base/maybe
 load ../base
   find spot
   find bond
+  find bank
 
 load ./one
   find put-one
@@ -77,6 +78,15 @@ load ../tool/base
   find read-file
   find more
 
+load ../tool/say
+  find name-run
+  find say-done
+  find say-skip
+  find say-info
+  find say-next
+  find finish
+  find finish-next
+
 # Every zone in the tree, flattened, so the walk is one loop rather than a
 # recursion at every call site.
 task all-spots
@@ -103,7 +113,8 @@ task all-spots
 
 # Does the provider already hold a project by this name?
 task has-hold
-  take all, like list
+  # the provider's projects, as `list-hold` answers
+  take all, like list, like bank
   take name, like text
   like boolean
   save out, false
@@ -128,6 +139,9 @@ task keep-zone
   take name, like text
   take commit, like boolean
 
+  call name-run
+    text <save>
+
   # A name given writes that one value, read from a hidden prompt, instead of
   # walking the declaration and creating a project per zone.
   #
@@ -147,6 +161,7 @@ task keep-zone
       save wrote
         call put-one
           bind name, read name
+          bind spot, read spot
           bind commit, read commit
       fork test
         hook test
@@ -156,8 +171,12 @@ task keep-zone
             bind spot, text <>
             bind fresh, true
             bind name, text <>
+          send back
+            call finish
+              text <Saved>
       send back
-        read wrote
+        call finish
+          text <Reported>
 
   like number
 
@@ -166,7 +185,7 @@ task keep-zone
   fork test
     hook test
       call is-equal
-        call size
+        call length
           read decks
         code 0
     hook hold
@@ -287,16 +306,16 @@ task keep-zone
             call add
               read made
               code 1
-          call show-line
+          call say-done
             call join-text
               make list
-                text <  made    >
+                text <made >
                 read one
         hook miss
-          call show-line
+          call say-skip
             call join-text
               make list
-                text <  would make    >
+                text <would make >
                 read one
 
   fork test
@@ -305,7 +324,7 @@ task keep-zone
         read want
         code 0
     hook hold
-      call show-line
+      call say-info
         text <Every zone already has a project at the provider.>
 
   fork test
@@ -318,11 +337,11 @@ task keep-zone
             read want
             code 0
         hook hold
-          call show-line
-            call join-line
-              make list
-                text <>
-                text <report only. Add --commit to write.>
+          send back
+            call finish-next
+              text <Report only. Add --commit to write>
+              text <zone save --commit>
 
   send back
-    code 0
+    call finish
+      text <Saved>

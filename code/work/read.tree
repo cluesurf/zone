@@ -26,7 +26,7 @@ load @term/base/bytes
 load @term/base/list
   find list
   find push
-  find size
+  find length
 
 load @term/base/boolean
   find boolean
@@ -42,6 +42,8 @@ load ../base
   find file
   find need
   find bond
+  find hold
+  find haul
 
 load ./one
   find see-one
@@ -99,6 +101,12 @@ load ../tool/base
   find now-stamp
   find then-stamp
 
+load ../tool/say
+  find name-run
+  find say-next
+  find say-facts
+  find finish
+
 # One zone's own declared names, sealed from what the provider holds.
 #
 # Only names this zone DECLARES ITSELF are sealed here. An inherited name is
@@ -115,11 +123,12 @@ load ../tool/base
 # what the note is for: a project is a flat key namespace and cannot keep two
 # zones' values apart on its own.
 task holds-for
-  take all, like list
+  # each project's holds, as the provider answered a read of several
+  take all, like list, like haul
   take path, like text
   take note, like boolean
-  like list
-  save out
+  like list, like hold
+  save out, like list, like hold
     make list
   walk list, read all
     hook next
@@ -155,7 +164,7 @@ task seal-spot
   mark async
   take key, like bytes
   take at, like spot
-  take all, like list
+  take all, like list, like haul
   # Whether the tree keeps every zone in one project. Threaded down rather
   # than read off the spot, because only the ROOT carries the provider
   # settings: a nested zone would read an empty mode and place nothing.
@@ -262,6 +271,9 @@ task pull
   take name, like text
   like number
 
+  call name-run
+    text <read>
+
   # A name given asks about that one name instead of filling the cache.
   fork test
     hook test
@@ -271,14 +283,15 @@ task pull
     hook hold
       send back
         call see-one
-          read name
+          bind name, read name
+          bind spot, read spot
 
   save decks
     call read-decks
   fork test
     hook test
       call is-equal
-        call size
+        call length
           read decks
         code 0
     hook hold
@@ -358,19 +371,18 @@ task pull
                 hook test
                   read same-deck
                 hook hold
-                  call show-line
+                  call say-next
+                    text <skipped>
                     call join-text
                       make list
                         text <The cache is still good, >
                         call gap-text
                           read old/good
                         text <. Nothing was fetched.>
-                  call show-line
-                    text <>
-                  call show-line
-                    text <Run `zone read --fresh` to fetch anyway.>
+                    text <zone read --fresh>
                   send back
-                    code 0
+                    call finish
+                      text <Still good>
 
   save bond-got
     call read-bond
@@ -475,7 +487,7 @@ task pull
   # In `note` mode there is one, named by the declaration, and every zone's
   # values come back together. In `project` mode it is the whole tree, or the
   # chain down to one zone when a path was named.
-  save binds
+  save binds, like list, like text
     make list
   fork test
     hook test
@@ -594,10 +606,14 @@ task pull
     read at-cache
     read out
 
-  call show-line
-    call join-text
-      make list
-        text <Filled >
-        read at-cache
+  call say-facts
+    text <done>
+    text <Filled the cache>
+    make list
+      call join-text
+        make list
+          text <file >
+          read at-cache
   send back
-    code 0
+    call finish
+      text <Filled>

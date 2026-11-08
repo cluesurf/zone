@@ -14,18 +14,11 @@
 
 import { createRequire } from 'node:module'
 import { readFileSync } from 'node:fs'
-import { dirname, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { resolve } from 'node:path'
+import { stripTypes, termBase } from './strip'
 
-const HERE = dirname(fileURLToPath(import.meta.url))
 const require_ = createRequire(import.meta.url)
 
-// esbuild comes from the Term toolchain these tests already run on, as in ./shim.ts
-const { transformSync } = createRequire(
-  resolve(HERE, '../../term/deck/term/package.json'),
-)('esbuild') as {
-  transformSync: (source: string, options: object) => { code: string }
-}
 ;(globalThis as any).require = require_
 
 // The shim file declares one const named after the file. Term docks the
@@ -34,10 +27,10 @@ const AS: Record<string, string> = { bytes: 'octets', cipher: 'cipher', bit: 'bi
 
 for (const [file, global] of Object.entries(AS)) {
   const source = readFileSync(
-    resolve(HERE, `../../term/deck/term/deck/base/code/native/node/runtime/${file}.ts`),
+    resolve(termBase(), `code/native/node/runtime/${file}.ts`),
     'utf8',
   )
-  const js = transformSync(source, { loader: 'ts', format: 'cjs' }).code
+  const js = stripTypes(source)
   ;(globalThis as any)[global] = new Function(
     'require',
     `${js}; return ${file}`,

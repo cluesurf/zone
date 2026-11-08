@@ -25,6 +25,14 @@ load ../base
   find bond
   find deck
 
+load ./say
+  find say-info
+  find say-warn
+  find say-done
+  find say-fail
+  find say-time
+  find stop
+
 # Join text pieces with no separator.
 bind join-text
   take list, like list
@@ -39,25 +47,39 @@ bind join-line
   case node
     text <$list.join("\\n")>
 
-# Write one line to stdout. Configuration and status only.
-bind show-line
+# Data a person asked for, one line on stdout exactly as it is: the names
+# `zone list` prints, the paths `zone walk` prints for completion, the key
+# `zone lock mint` prints. Never an item, so a pipe gets only the data.
+bind show-data
   take text, like text
   case node
     text <process.stdout.write($text + "\\n")>
 
-# Say something on stderr without stopping. A warning belongs on stderr so a
-# command whose stdout is piped somewhere is not corrupted by it, and so the
-# warning still shows when it is.
-bind warn-line
-  take text, like text
-  case node
-    text <process.stderr.write($text + "\\n")>
+# Every other line goes through term's printer (tool/say.tree, decision 002):
+# the human view, on stderr.
 
-# Stop with a message on stderr and a non-zero exit.
-bind halt
+# One `●` item: configuration and status. Never a value.
+task show-line
   take text, like text
-  case node
-    text <(function () \{ process.stderr.write($text + "\\n"); process.exit(1) \})()>
+
+  call say-info
+    read text
+
+# A `▲` item: something to know that does not stop the command.
+task warn-line
+  take text, like text
+
+  call say-warn
+    read text
+
+# A refusal: a `✗` item, the run closed, exit 1.
+task halt
+  take text, like text
+  like number
+
+  send back
+    call stop
+      read text
 
 # The directory the command was run from.
 bind here
@@ -189,13 +211,16 @@ bind now-ms
   case node
     text <Date.now()>
 
-# Print one measured line: a name, a value and its budget.
-bind mark-time
+# One measured item: a name, its time and its budget, `▲` over budget.
+task mark-time
   take name, like text
   take took, like number
   take cap, like number
-  case node
-    text <process.stdout.write((($took \< $cap) ? "  ok    " : "  OVER  ") + $name + "  " + $took + " ms, budget " + $cap + "\\n")>
+
+  call say-time
+    read name
+    read took
+    read cap
 
 # A number as text, so it can join a message. `join-text` takes text only.
 bind text-of
@@ -339,12 +364,20 @@ bind yes-no
   case node
     text <$it ? "yes" : "no">
 
-# Print one check result from `zone test`.
-bind mark-test
+# One check of `zone test`: `✓` when it holds, `✗` when it does not.
+task mark-test
   take name, like text
   take good, like boolean
-  case node
-    text <process.stdout.write(($good ? "  ok    " : "  FAIL  ") + $name + "\\n")>
+
+  fork test
+    hook test
+      read good
+    hook hold
+      call say-done
+        read name
+    hook miss
+      call say-fail
+        read name
 
 # Explain which declared secrets the project did not supply.
 bind show-miss
@@ -381,7 +414,7 @@ bind mine-deck
 #
 #   zone: base/word.surf/star
 #   env: ARCJET_KEY
-#   from: mesh/.env
+#   from: shop/.env
 #
 # It survives for exactly one reason: a note written before the migration
 # still has to resolve, so `note-zones` falls back to it. `zone wash
@@ -406,7 +439,9 @@ bind note-field
 
 # A count, as text, for a diagnostic line.
 bind show-size
-  take list, like list
+  head t
+  # any list: only its length is read
+  take list, like list, like t
   like text
   case node
     text <String($list.length)>

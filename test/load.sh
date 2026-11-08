@@ -11,8 +11,9 @@ set -u
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ZONE="$(cd "$HERE/.." && pwd)"
-TERM_HOST="$ZONE/../term/deck/term/host/line.js"
-WORK="$(mktemp -d)"
+. "$HERE/term.sh"
+zone_term_find "$ZONE" || exit 1
+WORK="$(zone_work)"
 PROJ="$WORK/proj"
 SBOX="$WORK/home"
 mkdir -p "$PROJ" "$SBOX/.config/zone"
@@ -141,6 +142,25 @@ echo "$clean" | grep -qi 'went stale' && no "the warning corrupted stdout" || ok
 (cd "$ZONE" && pnpm exec tsx test/make-cache.ts "$PROJ" >/dev/null 2>&1)
 out="$(zone load word.surf/star -- node -e 'console.log("ran")' 2>&1)"
 echo "$out" | grep -qi 'went stale' && no "a good cache warned anyway" || ok "a good cache says nothing"
+
+echo
+echo "=== load: the -- after the zone is a separator, a later -- is the child's ==="
+# Decision term/cli-in-term/012 hands every word from the first positional on
+# to the passing slot verbatim, so the `--` in `load base -- node` reached
+# `main` and zone spawned a program named `--`: exit 1 and not a word printed
+# (2026-10-26). Every check above already used this form and went red; these
+# pin the two edges.
+out="$(zone load base -- node -e 'console.log("ARGS="+process.argv.slice(1).join(","))' a -- b)"
+echo "$out" | grep -q 'ARGS=a,--,b' && ok "a -- after the command reaches the child" || no "the child's -- was lost: $out"
+out="$(zone load base -- 2>&1)"
+echo "$out" | grep -q 'No command after' && ok "nothing after -- is refused in words" || no "no refusal: $out"
+
+echo
+echo "=== load: a command that cannot start is said, never a silent exit ==="
+out="$(zone load base -- zone-no-such-program-e2e 2>&1)"
+echo "$out" | grep -q 'Could not start "zone-no-such-program-e2e": ENOENT' && ok "names the program and the reason" || no "silent: $out"
+( cd "$PROJ" && node "$TERM_HOST" boot "$ZONE/code/line/base.tree" -- load base -- zone-no-such-program-e2e ) >/dev/null 2>&1
+[ "$?" = "127" ] && ok "exits 127, as a shell does" || no "wrong exit for a missing program"
 
 echo
 echo "=== load: no value is ever printed ==="

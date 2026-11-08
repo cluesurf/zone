@@ -26,7 +26,7 @@ load @term/base/text
 load @term/base/list
   find list
   find push
-  find size
+  find length
 
 load @term/base/boolean
   find boolean
@@ -94,6 +94,10 @@ load ../tool/base
   find read-file
   find have-env
 
+load ../tool/say
+  find name-run
+  find finish
+
 host cache-spot, text </.base/@cluesurf/zone/zone.code.tree>
 
 # The cache that answers a declaration sits beside it.
@@ -115,12 +119,63 @@ task load
   take over, like boolean
   like number
 
+  # SILENT WHEN IT HAS NOTHING TO SAY. The command is the point, and every
+  # script in the repository starts with this, so the run opens only on a
+  # warning or a refusal, and closes before the child starts, the way
+  # `term boot` closes its own run before its program runs.
+  call name-run
+    text <load>
+
+  # A `--` BETWEEN THE ZONE AND THE COMMAND IS A SEPARATOR, never the command.
+  #
+  # `zone load cluesurf -- tsx x.ts` is how every script in the repository
+  # calls this. The console's `list` slot passes from the first positional on
+  # (decision term/cli-in-term/012 part 2), so the `--` after `cluesurf` arrives
+  # verbatim and fills `main`. Spawning a program named `--` fails with no
+  # status and the command exited 1 without a word. No program is named `--`,
+  # so here it means the command is the next word. A `--` later in the line is
+  # the child's and is handed on untouched.
+  save command, read main
+  save words, read list
+  fork test
+    hook test
+      call equal
+        read main
+        text <-->
+    hook hold
+      save words
+        make list
+      save command, text <>
+      walk list, read list
+        hook next
+          take site, name one
+          fork test
+            hook test
+              call equal
+                read command
+                text <>
+            hook hold
+              save command, read one
+            hook miss
+              call push
+                bind list, read words
+                bind item, read one
+      fork test
+        hook test
+          call equal
+            read command
+            text <>
+        hook hold
+          send back
+            call halt
+              text <No command after `--`. Write it as `zone load <zone> -- <command>`.>
+
   save decks
     call read-decks
   fork test
     hook test
       call is-equal
-        call size
+        call length
           read decks
         code 0
     hook hold
@@ -399,7 +454,7 @@ task load
   fork test
     hook test
       call more
-        call size
+        call length
           read gone
         code 0
     hook hold
@@ -486,8 +541,7 @@ task load
   # THIS IS A CONTRACT, not a convenience. A process that loads env files of
   # its own has to know to stand down, or it will read a stale `.env` over
   # what zone just supplied and the value in effect will depend on which ran
-  # last. `mesh/deck/back/code/tool/env/current.ts` reads this and returns
-  # without touching a file.
+  # last. A program that reads this returns without touching a file.
   call push
     bind list, read held
     bind item
@@ -495,8 +549,12 @@ task load
         bind name, text <ZONE>
         bind body, read want
 
+  # a run a warning opened is over before the child starts, so the child is
+  # not drawn inside it
+  call finish
+    text <Loaded>
   send back
     call run
-      bind name, read main
-      bind list, read list
+      bind name, read command
+      bind list, read words
       bind hold, read held

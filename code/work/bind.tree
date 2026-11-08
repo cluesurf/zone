@@ -33,13 +33,17 @@ load @term/base/file
 load ../tool/base
   find join-text
   find join-line
-  find show-line
   find dir-of
   find make-dir
   find save-text
   find equal
   find this-host
   find this-mind
+
+load ../tool/say
+  find name-run
+  find say-facts
+  find finish-next
 
 # ONE QUESTION, and everything else detected.
 #
@@ -56,7 +60,10 @@ task moor
   take host, like text
   take sort, like text
   take hold, like text
+  like number
 
+  call name-run
+    text <bind>
   fork test
     hook test
       call equal
@@ -103,13 +110,24 @@ task moor
         bind team, read team
         bind save, read kind
 
-  call show-line
+  call say-facts
+    text <done>
     call join-text
       make list
         text <Bound >
         read host
-        text <. Next: zone code save >
-        read sort
+    make list
+      call join-text
+        make list
+          text <file >
+          read at
+  send back
+    call finish-next
+      text <Bound>
+      call join-text
+        make list
+          text <zone code save >
+          read sort
 
 # Render the binding back out as `.tree`. Written by hand rather than by a
 # generic printer so the file keeps its comments and reads like something a

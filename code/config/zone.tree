@@ -27,7 +27,7 @@ load @term/base/text
 load @term/base/list
   find list
   find push
-  find size
+  find length
   find reverse
 
 load @term/base/boolean
@@ -425,8 +425,8 @@ task join-path
 
 # What a declaration calls its own root.
 #
-# THE REPOSITORY'S NAME IS THE PREFIX. `mesh/zone.tree` says `self mesh`, so
-# every path in it reads `mesh`, `mesh/moon`, `mesh/star`. A declaration in
+# THE REPOSITORY'S NAME IS THE PREFIX. A `zone.tree` that says `self shop`
+# names every path in it `shop`, `shop/dev`, `shop/live`. A declaration in
 # `home/` says `self home` and gets `home/...`.
 #
 # That name is not decoration: it is what a stored secret carries in its
@@ -437,7 +437,7 @@ task join-path
 # `self true` is the older spelling and still means the default, so a
 # declaration that has not been given a name keeps working.
 task self-name
-  take roots, like list
+  take roots, like list, like leaf
   like text
   save out, read root-name
   walk list, read roots
@@ -480,11 +480,11 @@ task mine-zone
       read roots
   # THE NAME GOES IN `term`, WHERE `mine-spot` LOOKS FOR IT. Putting it in
   # `head` leaves the root spot nameless, and then a path that spells the
-  # root out, `mesh/moon`, matches nothing: the segment `mesh` is compared
+  # root out, `shop/moon`, matches nothing: the segment `shop` is compared
   # against an empty name and never skipped.
   #
   # `up` is empty rather than the name, because a spot's path is its parent's
-  # path joined to its own name. Passing the name as both makes `mesh/mesh`.
+  # path joined to its own name. Passing the name as both makes `shop/shop`.
   save word
     make list
   call push
@@ -609,7 +609,7 @@ task find-spot
 
 # Is a name already spoken for in this list?
 task has-need
-  take all, like list
+  take all, like list, like need
   take name, like text
   like boolean
   save out, false
@@ -628,7 +628,7 @@ task has-need
 
 # Is a path already on the load trail?
 task has-path
-  take all, like list
+  take all, like list, like text
   take path, like text
   like boolean
   save out, false
@@ -872,8 +872,8 @@ task mine-file
   # there, read here the same way a declaration's is.
   #
   # It has to. Every value is sealed against its own address, `<zone
-  # path>/<name>`, so a cache written under `mesh/moon` and read back under
-  # `base/mesh/moon` produces an address that does not match and a value that
+  # path>/<name>`, so a cache written under `shop/moon` and read back under
+  # `base/shop/moon` produces an address that does not match and a value that
   # will not open. That is the seal doing its job, on a file nobody moved.
   save name
     call self-name
@@ -1044,7 +1044,7 @@ task pull-cast
   fork test
     hook test
       call is-equal
-        call size
+        call length
           read all
         code 0
     hook hold

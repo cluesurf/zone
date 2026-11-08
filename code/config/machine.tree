@@ -199,20 +199,21 @@ task berth
             text <:>
             read sort
 
-# The project a sort points at.
+# The seat a sort points at. A seat's `name` is `host:sort`, so it is matched on its `sort`. It took a `sort` and
+# compared the full name until the bond's seats were typed (D1), and could match nothing.
 task bind-sort
   take bond, like bond
   take sort, like text
   like maybe
-    head sort
+    head seat
   send back
     call find
       bind list, read bond/seat
       bind test
         task same
-          take it, like sort
+          take it, like seat
           like boolean
           send back
             call equal
-              read it/name
+              read it/sort
               read sort

@@ -5,9 +5,9 @@
 # `key: value` block and is now a `host` data document read by the
 # compiler:
 #
-#   zone: cluesurf, mesh          ->   list zone, <cluesurf>, <mesh>
+#   zone: acme, shop          ->   list zone, <acme>, <shop>
 #   env: ARCJET_KEY                    (dropped)
-#   from: mesh/.env                    (dropped)
+#   from: shop/.env                    (dropped)
 #
 # `env:` and `from:` go because nothing has ever read them back. `from:`
 # named the `.env` file a value came from, and those files are being
@@ -30,7 +30,7 @@ load @term/base/text
 load @term/base/list
   find list
   find push
-  find size
+  find length
 
 load @term/base/boolean
   find boolean
@@ -42,6 +42,7 @@ load @term/base/maybe
 
 load ../base
   find spot
+  find hold-note
 
 load ./one
   find gear-up
@@ -66,10 +67,19 @@ load ../tool/base
   find show-size
   find text-of
 
+load ../tool/say
+  find name-run
+  find say-done
+  find finish
+  find finish-next
+
 task wash
   mark async
   take commit, like boolean
   like number
+
+  call name-run
+    text <wash>
 
   # The declaration, the machine binding and the provider credential,
   # with every refusal already worded. The same entry point `put-one`
@@ -85,7 +95,8 @@ task wash
       bind body, read it/token
       bind team, read it/root/team
 
-  save moved
+  # whole rows, which the write pass rebuilds each note from
+  save moved, like list, like hold-note
     make list
   save kept
     make list
@@ -114,7 +125,7 @@ task wash
       fork test
         hook test
           call is-equal
-            call size
+            call length
               read zones
             code 0
         hook hold
@@ -213,26 +224,16 @@ task wash
               read done
               code 1
 
-          call show-line
+          call say-done
             call join-text
               make list
+                read one/name
                 text <  >
                 call text-of
                   read done
                 text </>
                 call show-size
                   read moved
-                text <  >
-                read one/name
-
-      call show-line
-        text <>
-      call show-line
-        call join-text
-          make list
-            call text-of
-              read done
-            text < notes rewritten>
 
     hook miss
       walk list, read moved
@@ -250,7 +251,7 @@ task wash
   fork test
     hook test
       call is-above
-        call size
+        call length
           read loose
         code 0
     hook hold
@@ -274,7 +275,7 @@ task wash
   fork test
     hook test
       call is-above
-        call size
+        call length
           read owned
         code 0
     hook hold
@@ -302,14 +303,15 @@ task wash
       fork test
         hook test
           call is-above
-            call size
+            call length
               read moved
             code 0
         hook hold
-          call show-line
-            text <>
-          call show-line
-            text <Nothing was written. Re-run with `--commit` to rewrite them.>
+          send back
+            call finish-next
+              text <Nothing was written>
+              text <zone wash --commit>
 
   send back
-    code 0
+    call finish
+      text <Washed>

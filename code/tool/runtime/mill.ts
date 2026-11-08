@@ -223,7 +223,7 @@ var __read = (() => {
       fix: "a proof may call only pure tasks: no native calls, no async, no writes through a record it did not make"
     },
     // A `twin` is another implementation of a task, which the compiler may choose in its place, so it must be able to
-    // agree with it (note/term/optimize/admission.md). Each of these is a twin that could not.
+    // agree with it. Each of these is a twin that could not.
     "twin-unknown": {
       code: 26,
       message: "this twin names no task",
@@ -276,7 +276,7 @@ var __read = (() => {
       code: 33,
       message: "this relaxation is not one Term defines",
       severity: "error",
-      fix: "the relaxations are `float-order` and `float-fused` (note/term/optimize/words.md)"
+      fix: "the relaxations are `float-order` and `float-fused`"
     },
     // A supervision tree OTP would start and then misbehave: a `transient` worker restarts only when it raises, so one
     // whose work can raise nothing never restarts, and is a `temporary` under a misleading name (check/supervise.ts)
@@ -304,7 +304,7 @@ var __read = (() => {
     },
     // a call to an async task OUTSIDE every task (a top-level `host`, a component's body, a closure in either that is
     // not async), where nothing can wait for it: it hands back a pending value. `tick` says that is meant. Behind
-    // the await switch (check/effects.ts, `setAwaitOutsideTasks`). note/term/plan/await-by-default-and-mark-metadata.md
+    // the compiler's await switch.
     "async-outside-task": {
       code: 39,
       message: "a call to an async task outside any task, where nothing waits for it",
@@ -313,7 +313,6 @@ var __read = (() => {
     },
     // `note async`, `note unsafe`, `note draft` ...: metadata is `mark` since 2026-10-02, and `note <word>` is the
     // old spelling. Still read the same (the mill mints both as one form), so code written before keeps building.
-    // note/term/plan/await-by-default-and-mark-metadata.md, section 4
     "note-metadata": {
       code: 38,
       message: "`note` is the old spelling of metadata, which is `mark`",

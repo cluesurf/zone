@@ -40,12 +40,22 @@ load ../tool/base
   find not-equal
   find join-text
   find join-line
-  find show-line
   find drop-file
+
+load ../tool/say
+  find name-run
+  find say-done
+  find say-skip
+  find finish
 
 task toss
   mark async
   take name, like text
+  take spot, like text
+  like number
+
+  call name-run
+    text <toss>
 
   # A name given means one secret at the provider, not this machine's binding.
   fork test
@@ -56,7 +66,8 @@ task toss
     hook hold
       send back
         call drop-one
-          read name
+          bind name, read name
+          bind spot, read spot
 
   save bond
     call read-bond
@@ -66,9 +77,11 @@ task toss
       call is-none
         read bond
     hook hold
+      call say-skip
+        text <This machine is not bound. Nothing to toss.>
       send back
-        call show-line
-          text <This machine is not bound. Nothing to toss.>
+        call finish
+          text <Nothing to toss>
   save bond-in
     call unwrap
       read bond
@@ -112,8 +125,11 @@ task toss
   call drop-file
     call spot-bond
 
-  call show-line
+  call say-done
     call join-line
       make list
         text <Tossed the local binding.>
         text <Remote access tokens may still need revoking in the provider.>
+  send back
+    call finish
+      text <Tossed>

@@ -28,7 +28,7 @@ load @term/base/text
 load @term/base/list
   find list
   find push
-  find size
+  find length
 
 load @term/base/boolean
   find boolean
@@ -86,6 +86,15 @@ load ../tool/base
   find put-secret
   find text-of
 
+load ../tool/say
+  find name-run
+  find say-done
+  find say-fail
+  find say-skip
+  find say-next
+  find finish
+  find finish-next
+
 # The command a target is filled through, and how it names a secret.
 task send-args
   take target, like text
@@ -122,6 +131,8 @@ task post
   take commit, like boolean
   like number
 
+  call name-run
+    text <move>
   save tool
     call send-tool
       read target
@@ -154,7 +165,7 @@ task post
   fork test
     hook test
       call is-equal
-        call size
+        call length
           read decks
         code 0
     hook hold
@@ -285,10 +296,10 @@ task post
         hook test
           read commit
         hook miss
-          call show-line
+          call say-skip
             call join-text
               make list
-                text <  would send  >
+                text <would send >
                 read word
           save sent
             call add
@@ -317,27 +328,25 @@ task post
             read why
             text <>
         hook hold
-          call show-line
+          call say-done
             call join-text
               make list
-                text <  sent       >
+                text <sent >
                 read word
           save sent
             call add
               read sent
               code 1
         hook miss
-          call show-line
+          call say-fail
             call join-text
               make list
-                text <  FAILED     >
+                text <send >
                 read word
-                text <  >
+                text < failed: >
                 read why
 
-  call show-line
-    text <>
-  call show-line
+  save verdict
     call join-text
       make list
         call text-of
@@ -353,22 +362,33 @@ task post
         read gone
         code 0
     hook hold
-      call show-line
+      call say-next
+        text <warning>
         call join-text
           make list
             call text-of
               read gone
-            text < declared name(s) are not cached. Run `zone read` first.>
+            text < declared name(s) are not cached.>
+        text <zone read>
 
   fork test
     hook test
       read commit
     hook miss
-      call show-line
-        call join-line
-          make list
-            text <>
-            text <report only. Add --commit to send.>
+      send back
+        call finish-next
+          call join-text
+            make list
+              read verdict
+              text <, report only. Add --commit to send>
+          call join-text
+            make list
+              text <zone move >
+              read target
+              text < --place >
+              read place
+              text < --commit>
 
   send back
-    code 0
+    call finish
+      read verdict

@@ -18,7 +18,7 @@ load @term/base/text
 load @term/base/list
   find list
   find push
-  find size
+  find length
 
 load @term/base/boolean
   find boolean
@@ -80,6 +80,12 @@ load ../tool/base
   find mark-time
   find text-of
 
+load ../tool/say
+  find name-run
+  find say-next
+  find finish
+  find finish-next
+
 host warm-budget, code 30
 
 task probe
@@ -87,13 +93,15 @@ task probe
   take spot, like text
   like number
 
+  call name-run
+    text <test>
   save bad, code 0
 
   save decks
     call read-decks
   save any
     call more
-      call size
+      call length
         read decks
       code 0
 
@@ -103,10 +111,15 @@ task probe
   fork test
     hook test
       read any
+    # `vet` reports through `mark-test` and returns nothing, so this answers 0,
+    # as it always did: a caller's `like number` used to stand in for the
+    # result `vet` never gave, which only the merged build allowed
     hook miss
+      call vet
+        bind sort, text <>
       send back
-        call vet
-          bind sort, text <>
+        call finish
+          text <Checked>
 
   call mark-test
     bind name, text <a declaration is in force>
@@ -186,13 +199,10 @@ task probe
     hook test
       read bound
     hook miss
-      call show-line
-        call join-line
-          make list
-            text <>
-            text <Run `zone bind` first. Nothing below this can be checked without it.>
       send back
-        code 1
+        call finish-next
+          text <Nothing below this can be checked without a binding>
+          text <zone bind --team \<team\>>
 
   save bond
     call unwrap
@@ -235,13 +245,10 @@ task probe
         call add
           read bad
           code 1
-      call show-line
-        call join-line
-          make list
-            text <>
-            text <Run `zone read` to fill it.>
       send back
-        read bad
+        call finish-next
+          text <There is no cache to check>
+          text <zone read>
 
   save file
     call mine-file
@@ -265,15 +272,18 @@ task probe
         call add
           read bad
           code 1
-      call show-line
-        text <  the declaration changed since the cache was made. Run `zone read`.>
+      call say-next
+        text <info>
+        text <The declaration changed since the cache was made.>
+        text <zone read>
 
   fork test
     hook test
       read keyed
     hook miss
       send back
-        read bad
+        call finish
+          text <Problems above>
 
   save key
     call unwrap
@@ -367,16 +377,22 @@ task probe
         call add
           read bad
           code 1
+      save lines
+        make list
+      call push
+        bind list, read lines
+        bind item, text <Required and not in the cache:>
       walk list, read missing
         hook next
           take site, name one
-          call show-line
-            call join-text
-              make list
-                text <          missing: >
-                read one
-      call show-line
-        text <          fix with: zone read>
+          call push
+            bind list, read lines
+            bind item, read one
+      call say-next
+        text <info>
+        call join-line
+          read lines
+        text <zone read>
 
   call mark-time
     bind name, text <the warm read is inside its budget>
@@ -393,23 +409,19 @@ task probe
           read bad
           code 1
 
-  call show-line
-    text <>
   fork test
     hook test
       call is-equal
         read bad
         code 0
     hook hold
-      call show-line
-        text <Everything checks out.>
-    hook miss
-      call show-line
-        call join-text
-          make list
-            call text-of
-              read bad
-            text < problem(s) above.>
-
+      send back
+        call finish
+          text <Everything checks out>
   send back
-    read bad
+    call finish
+      call join-text
+        make list
+          call text-of
+            read bad
+          text < problem(s) above>

@@ -40,25 +40,25 @@ function check(what: string, got: unknown, want: unknown) {
 
 console.log('\nwriting')
 
-check('one zone', noteMake(['cluesurf']), 'list zone, <cluesurf>')
+check('one zone', noteMake(['acme']), 'list zone, <acme>')
 check(
   'two zones',
-  noteMake(['cluesurf', 'mesh']),
-  'list zone, <cluesurf>, <mesh>',
+  noteMake(['acme', 'shop']),
+  'list zone, <acme>, <shop>',
 )
 check('no zones', noteMake([]), 'list zone')
 
 console.log('\nreading what it wrote')
 
-check('one back', noteZones(noteMake(['cluesurf'])), ['cluesurf'])
+check('one back', noteZones(noteMake(['acme'])), ['acme'])
 
 // THE CASE A LINE READER LOST. zone's hand-rolled `.tree` reader kept
 // ONE `<...>` per line, so a two-value line silently dropped the first.
 // That bug is why `time <made>, <toss>` read as a cache with no fetch
 // time. The compiler keeps every value, and this is the guard on it.
-check('two back', noteZones(noteMake(['cluesurf', 'mesh'])), [
-  'cluesurf',
-  'mesh',
+check('two back', noteZones(noteMake(['acme', 'shop'])), [
+  'acme',
+  'shop',
 ])
 
 check('none back', noteZones(noteMake([])), [])
@@ -69,18 +69,18 @@ check('a nested path', noteZones(noteMake(['base/word.surf/star'])), [
 
 console.log('\nmembership')
 
-const two = noteMake(['cluesurf', 'mesh'])
+const two = noteMake(['acme', 'shop'])
 
-check('names the first', noteHas(two, 'cluesurf'), true)
-check('names the second', noteHas(two, 'mesh'), true)
+check('names the first', noteHas(two, 'acme'), true)
+check('names the second', noteHas(two, 'shop'), true)
 check('does not name a third', noteHas(two, 'land'), false)
 
-// A PREFIX IS NOT A MEMBER. `mesh` must not match `mesh/moon`, or a
+// A PREFIX IS NOT A MEMBER. `shop` must not match `shop/moon`, or a
 // value scoped to development would be handed to production.
 check('a prefix is not a member', noteHas(two, 'mes'), false)
 check(
   'a longer path is not a member',
-  noteHas(two, 'mesh/moon'),
+  noteHas(two, 'shop/moon'),
   false,
 )
 
@@ -92,45 +92,45 @@ console.log('\nadding, never replacing')
 // the other root.
 check(
   'keeps what was there',
-  noteZones(noteAdd(noteMake(['cluesurf']), 'mesh')),
-  ['cluesurf', 'mesh'],
+  noteZones(noteAdd(noteMake(['acme']), 'shop')),
+  ['acme', 'shop'],
 )
 
 check(
   'adding twice changes nothing',
-  noteZones(noteAdd(noteMake(['cluesurf', 'mesh']), 'mesh')),
-  ['cluesurf', 'mesh'],
+  noteZones(noteAdd(noteMake(['acme', 'shop']), 'shop')),
+  ['acme', 'shop'],
 )
 
-check('adding to an empty note', noteZones(noteAdd('', 'cluesurf')), [
-  'cluesurf',
+check('adding to an empty note', noteZones(noteAdd('', 'acme')), [
+  'acme',
 ])
 
 console.log('\nthe retired shape still resolves')
 
 // Until `zone wash --commit` has rewritten every stored note.
-check('one zone, old shape', noteZones('zone: cluesurf'), ['cluesurf'])
+check('one zone, old shape', noteZones('zone: acme'), ['acme'])
 
-check('two zones, old shape', noteZones('zone: cluesurf, mesh'), [
-  'cluesurf',
-  'mesh',
+check('two zones, old shape', noteZones('zone: acme, shop'), [
+  'acme',
+  'shop',
 ])
 
 check(
   'old shape with the fields that are now dropped',
-  noteZones('zone: cluesurf, mesh\nenv: ARCJET_KEY\nfrom: mesh/.env'),
-  ['cluesurf', 'mesh'],
+  noteZones('zone: acme, shop\nenv: ARCJET_KEY\nfrom: shop/.env'),
+  ['acme', 'shop'],
 )
 
-check('old shape membership', noteHas('zone: cluesurf, mesh', 'mesh'), true)
+check('old shape membership', noteHas('zone: acme, shop', 'shop'), true)
 
 // MIGRATING ONE NOTE IS `noteAdd` ON IT. Reading the old shape and
 // writing the new one is the whole of what `zone wash` does per
 // secret, so it is proven here rather than only in the command.
 check(
   'old shape migrates to new',
-  noteAdd('zone: cluesurf, mesh\nfrom: mesh/.env', 'cluesurf'),
-  'list zone, <cluesurf>, <mesh>',
+  noteAdd('zone: acme, shop\nfrom: shop/.env', 'acme'),
+  'list zone, <acme>, <shop>',
 )
 
 console.log('\nwhat may be rewritten, and what may not')
@@ -139,27 +139,27 @@ console.log('\nwhat may be rewritten, and what may not')
 // emits one line, so rewriting a note with it drops everything else.
 // That is right for the four machine-written lines and wrong for
 // anything a person typed.
-check('a new-shape note', notePlain('list zone, <cluesurf>'), true)
-check('an old-shape note', notePlain('zone: cluesurf, mesh'), true)
+check('a new-shape note', notePlain('list zone, <acme>'), true)
+check('an old-shape note', notePlain('zone: acme, shop'), true)
 
 // `env` and `from` are machine fields this migration exists to DROP. A
 // version that counted them as writing reported 870 of 878 notes as
 // untouchable, so the migration could not have moved anything.
 check(
   'the retired machine fields',
-  notePlain('zone: cluesurf\nenv: ARCJET_KEY\nfrom: mesh/.env'),
+  notePlain('zone: acme\nenv: ARCJET_KEY\nfrom: shop/.env'),
   true,
 )
 
 check(
   'a line somebody wrote',
-  notePlain('zone: cluesurf\nservice: Google Cloud Platform'),
+  notePlain('zone: acme\nservice: Google Cloud Platform'),
   false,
 )
 
 check(
   'a sentence somebody wrote',
-  notePlain('zone: cluesurf\nrotate this before March'),
+  notePlain('zone: acme\nrotate this before March'),
   false,
 )
 

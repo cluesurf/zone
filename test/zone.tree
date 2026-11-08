@@ -155,7 +155,7 @@ task show-alias
             read want
         hook hold
           save out
-            call size
+            call length
               read one/alias
   send back
     read out
