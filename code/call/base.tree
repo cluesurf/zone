@@ -102,10 +102,21 @@ task run
 # the program's name and the system's reason, and exits 127 as a shell does.
 # Until 2026-10-26 it returned 1 in silence, which hid `zone load x -- cmd`
 # spawning a program named `--` behind a bare exit 1.
+#
+# CTRL+C IS THE CHILD'S. While the child runs, zone ignores SIGINT and
+# SIGQUIT, as system(3) does: the terminal sends them to its whole
+# foreground group, so the child gets each one itself. Zone used to keep
+# node's default, so the first Ctrl+C killed zone at once while its child
+# was still stopping: the shell above got its prompt back, the child's
+# teardown went on printing behind it, and a second Ctrl+C, the one that
+# tells `mesh/task/boot-dev.sh` to stop waiting, reached the shell instead
+# (2026-11-08, `pnpm boot:local`). A listener is enough: node catches the
+# signal and the blocked spawn never sees it. A child killed by a signal
+# exits 128 plus its number, as a shell reports it, where it used to be 1.
 bind spawn
   take name, like text
   take list, like list
   take hold, like list
   like number
   case node
-    text <(function () \{ var extra = \{\}; for (var i = 0; i \< $hold.length; i++) \{ extra[$hold[i].name] = $hold[i].body \} var r = require("node:child_process").spawnSync($name, $list, \{ stdio: "inherit", env: Object.assign(\{\}, process.env, extra) \}); if (r.error) \{ process.stderr.write("Could not start " + JSON.stringify($name) + ": " + (r.error.code || r.error.message) + "\\n"); return 127 \} return r.status === null ? 1 : r.status \})()>
+    text <(function () \{ var extra = \{\}; for (var i = 0; i \< $hold.length; i++) \{ extra[$hold[i].name] = $hold[i].body \} var quiet = function () \{\}; process.on("SIGINT", quiet); process.on("SIGQUIT", quiet); var r; try \{ r = require("node:child_process").spawnSync($name, $list, \{ stdio: "inherit", env: Object.assign(\{\}, process.env, extra) \}) \} finally \{ process.off("SIGINT", quiet); process.off("SIGQUIT", quiet) \} if (r.error) \{ process.stderr.write("Could not start " + JSON.stringify($name) + ": " + (r.error.code || r.error.message) + "\\n"); return 127 \} if (r.status === null) \{ var number = require("node:os").constants.signals[r.signal]; return number ? 128 + number : 1 \} return r.status \})()>
