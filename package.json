@@ -1,6 +1,6 @@
 {
   "name": "@term/zone",
-  "version": "0.2.2",
+  "version": "0.2.4",
   "private": true,
   "description": "Environment and secrets: bind a machine, keep its credential in the system keystore, run a command with a zone's values in its environment. Published to the Term registry only (term save @term/zone -g), never npm.",
   "license": "Apache-2.0",

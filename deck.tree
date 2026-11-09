@@ -1,7 +1,7 @@
 deck @term/zone
   head <Secret access: bind a machine, hold its credential in the system keystore, call commands with temporary secrets>
   text <The Term Secret Access Library>
-  mark <0.2.2>
+  mark <0.2.4>
   test ./test
   line ./code/line
   make <security>

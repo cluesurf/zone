@@ -43,7 +43,7 @@ load @term/base/boolean
 
 # The tool and version on the opening line. The manifest's mark, which
 # `zone -v` answers from deck.tree: test/help.sh holds the two equal.
-host zone-tool, text <zone 0.2.2>
+host zone-tool, text <zone 0.2.4>
 
 # The run's verb, how many commands are inside it, and whether its opening
 # was printed: this process's. A command another calls (`zone load` fills an
